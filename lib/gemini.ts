@@ -1,5 +1,4 @@
 import {
-  DynamicRetrievalMode,
   GoogleGenerativeAI,
   GoogleGenerativeAIError,
 } from "@google/generative-ai";
@@ -8,7 +7,6 @@ import {
   GoogleAICacheManager,
   GoogleAIFileManager,
 } from "@google/generative-ai/server";
-
 const DISPLAY_NAME = "player_data";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -114,12 +112,13 @@ Additional Points:
 - In Announced Lineups: +4 pts
 - Playing Substitute: +4 pts
 
-Special Rules:
+you can select a maximum of 8 batsmen and 8 bowlers for your fantasy cricket team. Additionally, you must include at least 1 wicketkeeper and 1 all-rounder in your team.Special Rules:
 1. A player scoring a century will only get points for the century, not for 25/50/75 run bonuses.
 2. Negative strike rate points only apply for strike rates of 70 or below.
 3. For multiple catches, the 3 Catch Bonus is awarded only once.
 4. No points for Super Over or Super Five actions.
 5. Substitutes (except Concussion, X-Factor, or Impact Player) don't earn points.
+6. You can select a maximum of 8 batsmen and 8 bowlers for your fantasy cricket team. Additionally, you must include at least 1 wicketkeeper and 1 all-rounder in your team.
 
 
 
@@ -154,27 +153,75 @@ export async function getPlaying11OfTeams(match: Match) {
           google_search: {},
         },
       ],
-      systemInstruction: `Your task is to return the playing 22 players for the given match as a JSON array. Use the google_search tool to search for the players. YOU MUST RETURN ONLY AND ONLY THE JSON ARRAY OF NAMES OF PLAYERS. Here is a sample response:
+      systemInstruction: `Your task is to return the playing 11 players for EACH team in the given match as a JSON object. Use the google_search tool to search for the players. Each player should include their role (BATTER, BOWLER, ALL_ROUNDER, or WICKET_KEEPER), and special designations like captain, vice-captain, and impact player.
+      
+      YOU MUST RETURN ONLY AND ONLY THE JSON OBJECT WITH PLAYER DETAILS. Here is the expected response format:
     
     \`\`\`json
-    ["Rohit Sharma", "Hardik Pandya"]
+    {
+      "Mumbai Indians": [
+        {
+          "name": "Rohit Sharma", 
+          "role": "BATTER", 
+          "isCaptain": true, 
+          "isViceCaptain": false, 
+          "isImpactPlayer": false
+        },
+        {
+          "name": "Hardik Pandya", 
+          "role": "ALL_ROUNDER", 
+          "isCaptain": false, 
+          "isViceCaptain": true, 
+          "isImpactPlayer": false
+        }
+      ], 
+      "Chennai Super Kings": [
+        {
+          "name": "MS Dhoni", 
+          "role": "WICKET_KEEPER", 
+          "isCaptain": true, 
+          "isViceCaptain": false, 
+          "isImpactPlayer": false
+        }
+      ]
+    }
     \`\`\`
+    
+    The player roles should be one of: BATTER, BOWLER, ALL_ROUNDER, or WICKET_KEEPER.
+    Make sure to include accurate player information including their correct role, captain/vice-captain status, and impact player status.
+    
+    DO NOT include image URLs in your response. The image URLs will be added from our database separately.
     `,
     });
     const { response } = await model.generateContent(
-      `Give me the playing 22 players for ${match.home} vs ${match.away} match on ${match.date} at ${match.venue}`
+      `Give me the playing 11 players for ${match.home} vs ${match.away} match on ${match.date} at ${match.venue} with complete player details including role, captain, vice-captain, and impact player status. DO NOT include image URLs in your response.`
     );
-    const players = JSON.parse(
+    const playersData = JSON.parse(
       response
         .text()
         .replace(/^```json\n/, "")
         .replace(/\n```$/, "")
         .replaceAll("\n", "")
-    );
-    return players;
+    ) as Record<
+      string,
+      Array<{
+        name: string;
+        role: "BATTER" | "BOWLER" | "ALL_ROUNDER" | "WICKET_KEEPER";
+        isCaptain: boolean;
+        isViceCaptain: boolean;
+        isImpactPlayer: boolean;
+      }>
+    >;
+    return playersData;
   } catch (err) {
     if (err instanceof GoogleGenerativeAIError) {
       console.log(err.message);
     }
+
+    // Return empty arrays as fallback
+    return {
+      [match.home]: [],
+      [match.away]: [],
+    };
   }
 }

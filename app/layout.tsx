@@ -13,8 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cream 11",
-  description: "Cream 11",
+  title: "Cream 11 | Fantasy Cricket Team Builder",
+  description:
+    "Build your ultimate fantasy cricket team with Cream 11. Select players, analyze stats, and create your dream cricket XI.",
+  keywords: "fantasy cricket, dream team, IPL, cricket, team builder, Cream 11",
 };
 
 export default function RootLayout({
