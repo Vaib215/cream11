@@ -92,9 +92,11 @@ export default async function Home() {
             players: playersData[match.home].map((player) => ({
               ...player,
               imageUrl:
-                (teamsData as any)[match.home]?.players.find(
-                  (p: any) => p.name === player.name
-                )?.imageUrl || "/images/player-placeholder.png",
+                `/players/${player.name
+                  .toLowerCase()
+                  .replace(/[\s-]+/g, "_")
+                  .replaceAll(".", "")}.png` ||
+                "/images/player-placeholder.png",
             })),
             color: (teamsData as any)[match.home]?.colors?.color || "#333333",
             secondaryColor:
@@ -106,9 +108,11 @@ export default async function Home() {
             players: playersData[match.away].map((player) => ({
               ...player,
               imageUrl:
-                (teamsData as any)[match.away]?.players.find(
-                  (p: any) => p.name === player.name
-                )?.imageUrl || "/images/player-placeholder.png",
+                `/players/${player.name
+                  .toLowerCase()
+                  .replace(/[\s-]+/g, "_")
+                  .replaceAll(".", "")}.png` ||
+                "/images/player-placeholder.png",
             })),
             color: (teamsData as any)[match.away]?.colors?.color || "#333333",
             secondaryColor:
