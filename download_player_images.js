@@ -150,7 +150,9 @@ async function processTeams() {
         const playerName = player.name;
 
         // Create a filename from player name: convert to lowercase and replace spaces with underscores
-        const fileName = `${playerName.toLowerCase().replace(/\s+/g, "_")}.png`;
+        const fileName = `${playerName
+          .toLowerCase()
+          .replace(/\s+/g, "_")}.webp`;
         const localPath = path.join(playersDir, fileName);
         const localUrl = `/players/${fileName}`;
 

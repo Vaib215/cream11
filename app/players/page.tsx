@@ -30,7 +30,7 @@ export default async function PlayersPage() {
           imageUrl: `/players/${player
             .toLowerCase()
             .replace(/[\s-]+/g, "_")
-            .replaceAll(".", "")}.png`,
+            .replaceAll(".", "")}.webp`,
           team: teamName,
           teamColor: teamData.colors.color,
         });

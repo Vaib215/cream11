@@ -5,7 +5,7 @@
 All player images follow this naming convention:
 
 - Located in `/public/players/` directory
-- Filename pattern: `player_name_in_lowercase.png` (spaces replaced with underscores)
+- Filename pattern: `player_name_in_lowercase.webp` (spaces replaced with underscores)
 
 ## How to Use in Code
 
@@ -17,7 +17,7 @@ const PlayerCard = ({ playerName }) => {
   // Convert player name to image filename
   const imageUrl = `/players/${playerName
     .toLowerCase()
-    .replace(/\s+/g, "_")}.png`;
+    .replace(/\s+/g, "_")}.webp`;
 
   return (
     <div className="player-card">
@@ -33,7 +33,7 @@ const PlayerCard = ({ playerName }) => {
 For a player named "MS Dhoni", the image path would be:
 
 ```
-/players/ms_dhoni.png
+/players/ms_dhoni.webp
 ```
 
 ## Benefits

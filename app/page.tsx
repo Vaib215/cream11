@@ -95,8 +95,8 @@ export default async function Home() {
                 `/players/${player.name
                   .toLowerCase()
                   .replace(/[\s-]+/g, "_")
-                  .replaceAll(".", "")}.png` ||
-                "/images/player-placeholder.png",
+                  .replaceAll(".", "")}.webp` ||
+                "/players/default-headshot.webp",
             })),
             color: (teamsData as any)[match.home]?.colors?.color || "#333333",
             secondaryColor:
@@ -111,8 +111,8 @@ export default async function Home() {
                 `/players/${player.name
                   .toLowerCase()
                   .replace(/[\s-]+/g, "_")
-                  .replaceAll(".", "")}.png` ||
-                "/images/player-placeholder.png",
+                  .replaceAll(".", "")}.webp` ||
+                "/players/default-headshot.webp",
             })),
             color: (teamsData as any)[match.away]?.colors?.color || "#333333",
             secondaryColor:
