@@ -386,6 +386,9 @@ function EnhancedPlayerCard({
             width={100}
             height={100}
           />
+          <div className="absolute -bottom-1 -right-1 bg-white rounded-full rounded-br-none text-xs px-1 py-0.5">
+            {player.credits}
+          </div>
         </div>
 
         {/* Player Details */}

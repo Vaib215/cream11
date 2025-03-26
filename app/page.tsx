@@ -2,26 +2,28 @@ import dayjs from "dayjs";
 import matchesSchedule from "@/data/ipl_2025_schedule.json";
 import teamsData from "@/data/ipl_2025_teams.json";
 import { MatchFantasySelector } from "@/components/match-fantasy-selector";
-import { getPlaying11OfTeams } from "@/lib/gemini";
+import { getPlaying11OfTeams, getCream11 } from "@/lib/gemini";
 import { unstable_cache } from "next/cache";
 import { PlayerDetails } from "@/types/player";
+import { getPlayersCredits } from "@/lib/my11circle";
 
-// Define the Match type
 interface Match {
   home: string;
   away: string;
-  venue: string;
-  start: string;
   date: string;
+  start: string;
+  venue: string;
+  gameday_id: number;
 }
 
-// Define the match with players type
 interface MatchWithPlayers {
   id: string;
+  home: string;
+  away: string;
   teams: Record<
     string,
     {
-      players: PlayerDetails[];
+      players: (PlayerDetails & { imageUrl: string })[];
       color: string;
       secondaryColor: string;
       logo?: string;
@@ -30,11 +32,29 @@ interface MatchWithPlayers {
   venue: string;
   startTime: string;
   date: string;
+  aiSuggestedTeam?: {
+    selectedPlayers: any[];
+    totalCredits: number;
+    captain: string;
+    viceCaptain: string;
+  };
 }
 
 const getPlayersDataCached = unstable_cache(
   async (match: Match) => {
     const playersData = await getPlaying11OfTeams(match);
+    const playersCredits = await getPlayersCredits(match);
+
+    // Add credits to players from API response
+    Object.keys(playersData).forEach((team) => {
+      playersData[team] = playersData[team].map((player) => ({
+        ...player,
+        credits:
+          playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
+      }));
+    });
+
+    const finalPlayersData = playersData;
     if (
       !playersData?.[match.home]?.length ||
       !playersData?.[match.away]?.length
@@ -44,37 +64,58 @@ const getPlayersDataCached = unstable_cache(
 
       // Convert team data to playing 11 format if needed
       if (homeTeam?.players?.length) {
-        playersData[match.home] = homeTeam.players.map((player: any) => ({
+        finalPlayersData[match.home] = homeTeam.players.map((player: any) => ({
           name: player.name,
           role: player.role || ("BATTER" as const), // Default role
           isCaptain: false,
           isViceCaptain: false,
           isImpactPlayer: false,
+          credits:
+            playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
         }));
       } else {
-        playersData[match.home] = [];
+        finalPlayersData[match.home] = [];
       }
 
       if (awayTeam?.players?.length) {
-        playersData[match.away] = awayTeam.players.map((player: any) => ({
+        finalPlayersData[match.away] = awayTeam.players.map((player: any) => ({
           name: player.name,
           role: player.role || ("BATTER" as const), // Default role
           isCaptain: false,
           isViceCaptain: false,
           isImpactPlayer: false,
+          credits:
+            playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
         }));
       } else {
-        playersData[match.away] = [];
+        finalPlayersData[match.away] = [];
       }
     }
-
-    return playersData;
+    return finalPlayersData;
   },
-  ["playing-11"],
+  ["playing-20"],
   { revalidate: 1800 } // 30 minutes
 );
 
-export const revalidate = 1800; // Revalidate this page every 30 minutes
+// Create a cache for the AI suggested team
+const getAISuggestedTeamCached = unstable_cache(
+  async (match: Match) => {
+    try {
+      const result = await getCream11(match);
+      return result;
+    } catch (error) {
+      console.error("Error getting AI suggested team:", error);
+      return {
+        selectedPlayers: [],
+        totalCredits: 0,
+        captain: "",
+        viceCaptain: "",
+      };
+    }
+  },
+  ["ai-team"],
+  { revalidate: 3600 } // 1 hour
+);
 
 export default async function Home() {
   const todaysMatches = matchesSchedule.matches.filter((match) =>
@@ -85,12 +126,18 @@ export default async function Home() {
     todaysMatches.map(async (match) => {
       const playersData = await getPlayersDataCached(match);
 
+      // Get AI suggested team for this match server-side
+      const aiSuggestedTeam = await getAISuggestedTeamCached(match);
+
       return {
         id: `${match.home}-${match.away}-${match.date}`,
+        home: match.home,
+        away: match.away,
         teams: {
           [match.home]: {
             players: playersData[match.home].map((player) => ({
               ...player,
+              credits: player.credits || 9.0,
               imageUrl:
                 `/players/${player.name
                   .toLowerCase()
@@ -107,6 +154,7 @@ export default async function Home() {
           [match.away]: {
             players: playersData[match.away].map((player) => ({
               ...player,
+              credits: player.credits || 9.0,
               imageUrl:
                 `/players/${player.name
                   .toLowerCase()
@@ -124,6 +172,7 @@ export default async function Home() {
         venue: match.venue,
         startTime: match.start,
         date: match.date,
+        aiSuggestedTeam, // Pass pre-generated AI team
       };
     })
   );
@@ -131,15 +180,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-indigo-950">
       <div className="container mx-auto py-12 px-4">
-        {/* <div className="text-center mb-12">
-          <h1 className="text-5xl font-extrabold mb-3 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 bg-clip-text text-transparent">
-            Cream 11
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Build your ultimate fantasy cricket team from today's matches
-          </p>
-        </div> */}
-
         <div className="grid gap-10">
           {matchesWithPlayers.map((match) => (
             <div

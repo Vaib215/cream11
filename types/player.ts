@@ -5,9 +5,11 @@ export interface PlayerDetails {
   isViceCaptain: boolean;
   isImpactPlayer: boolean;
   imageUrl: string;
+  credits: number;
 }
 
 export interface Player extends PlayerDetails {
   team: string;
   teamColor: string;
+  credits: number;
 }

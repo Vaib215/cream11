@@ -1,16 +1,19 @@
 import type React from "react";
-import { Trophy, Zap, Shield, BarChart2 } from "lucide-react";
-
+import { Trophy, Zap, Shield, BarChart2, CreditCard } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 interface TeamStatsProps {
   stats: {
     winProbability: number;
     battingStrength: number;
     bowlingStrength: number;
     balanceRating: number;
+    totalCredits?: number;
   };
+  teamAnalysis?: string; // Add optional team analysis prop from AI
 }
 
-export function TeamStats({ stats }: TeamStatsProps) {
+export function TeamStats({ stats, teamAnalysis }: TeamStatsProps) {
   return (
     <div className="space-y-5">
       <div className="p-6 rounded-xl bg-gradient-to-br from-white to-indigo-50 dark:from-gray-800 dark:to-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 shadow-sm">
@@ -48,6 +51,43 @@ export function TeamStats({ stats }: TeamStatsProps) {
               icon={<BarChart2 className="h-5 w-5 text-purple-500" />}
               color="purple"
             />
+
+            {stats.totalCredits !== undefined && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-indigo-500" />
+                    <span className="font-medium text-gray-800 dark:text-gray-200">
+                      Total Credits
+                    </span>
+                  </div>
+                  <span
+                    className={`font-bold ${
+                      stats.totalCredits > 100
+                        ? "text-red-500"
+                        : "text-gray-900 dark:text-gray-100"
+                    }`}
+                  >
+                    {stats.totalCredits}/100
+                  </span>
+                </div>
+                <div
+                  className={`h-2.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 overflow-hidden`}
+                >
+                  <div
+                    className={`h-full rounded-full ${
+                      stats.totalCredits > 100
+                        ? "bg-gradient-to-r from-red-500 to-pink-500"
+                        : "bg-gradient-to-r from-indigo-500 to-violet-500"
+                    }`}
+                    style={{
+                      width: `${Math.min(stats.totalCredits, 100)}%`,
+                      transition: "width 0.5s ease-in-out",
+                    }}
+                  ></div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-5 rounded-lg bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-950/30 border border-purple-100 dark:border-purple-900/50 shadow-sm">
@@ -55,12 +95,11 @@ export function TeamStats({ stats }: TeamStatsProps) {
               <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-purple-600 to-pink-500 rounded-full mr-2"></span>
               Team Analysis
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-              This team has a strong bowling lineup with Rashid Khan and
-              Arshdeep Singh. The batting is well-balanced with power hitters
-              like Maxwell and anchor batsmen like Gill. Consider adding another
-              all-rounder for better team balance.
-            </p>
+            <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {teamAnalysis || "Team analysis not available."}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>
