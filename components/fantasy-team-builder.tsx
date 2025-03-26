@@ -27,8 +27,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import Image from "next/image";
 import { Player } from "@/types/player";
+import Image from "next/image";
 
 interface FantasyTeamBuilderProps {
   allPlayers: Player[];
@@ -42,7 +42,7 @@ export function FantasyTeamBuilder({
   onFantasyTeamChange,
 }: FantasyTeamBuilderProps) {
   const [open, setOpen] = useState(false);
-  const [draggedPlayer, setDraggedPlayer] = useState<Player | null>(null);
+  // const [draggedPlayer, setDraggedPlayer] = useState<Player | null>(null);
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +79,7 @@ export function FantasyTeamBuilder({
     player: Player,
     fromFantasyTeam: boolean = false
   ) => {
-    setDraggedPlayer(player);
+    // setDraggedPlayer(player);
     e.dataTransfer.setData(
       "player",
       JSON.stringify({ ...player, fromFantasyTeam })
@@ -91,7 +91,7 @@ export function FantasyTeamBuilder({
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    setDraggedPlayer(null);
+    // setDraggedPlayer(null);
 
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.classList.remove("opacity-50");
@@ -379,10 +379,12 @@ function EnhancedPlayerCard({
       <div className="flex h-full p-2">
         {/* Player Image */}
         <div className="relative h-full aspect-square mr-2 rounded-md overflow-hidden">
-          <img
+          <Image
             src={player.imageUrl || defaultImage}
             alt={player.name}
             className="object-cover w-full h-full"
+            width={100}
+            height={100}
           />
         </div>
 

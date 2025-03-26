@@ -28,7 +28,7 @@ async function uploadPlayerDataCSV() {
   return fileResult;
 }
 
-async function getCachedModel() {
+export async function getCachedModel() {
   const fileResult = await uploadPlayerDataCSV();
   const cacheManager = new GoogleAICacheManager(process.env.GEMINI_API_KEY!);
 
@@ -149,7 +149,7 @@ export async function getPlaying11OfTeams(match: Match) {
       model: "models/gemini-2.0-flash",
       tools: [
         {
-          // @ts-ignore
+          // @ts-expect-error - google_search is not defined in the types
           google_search: {},
         },
       ],

@@ -1,4 +1,5 @@
 import teamsData from "@/data/ipl_2025_teams.json";
+import Image from "next/image";
 
 interface Player {
   name: string;
@@ -14,10 +15,6 @@ interface TeamData {
     color: string;
     secondaryColor: string;
   };
-}
-
-interface TeamsData {
-  [teamName: string]: TeamData;
 }
 
 export default async function PlayersPage() {
@@ -50,9 +47,11 @@ export default async function PlayersPage() {
             style={{ borderTop: `4px solid ${player.teamColor}` }}
           >
             <div className="relative h-48 w-full overflow-hidden">
-              <img
+              <Image
                 src={player.imageUrl}
                 alt={player.name}
+                width={100}
+                height={100}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
               />

@@ -81,9 +81,11 @@ export function MatchTeams({ teams, teamNames }: MatchTeamsProps) {
               >
                 {/* Player Image */}
                 <div className="relative w-full h-24">
-                  <img
+                  <Image
                     src={player.imageUrl}
                     alt={player.name}
+                    width={100}
+                    height={100}
                     className="object-cover w-full h-full"
                   />
 

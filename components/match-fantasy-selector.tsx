@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Clock, MapPin, RefreshCw } from "lucide-react";
+import { Clock, MapPin, RefreshCw } from "lucide-react";
 import { MatchTeams } from "@/components/match-teams";
 import { FantasyTeamBuilder } from "@/components/fantasy-team-builder";
 import { TeamStats } from "@/components/team-stats";
@@ -234,7 +234,7 @@ export function MatchFantasySelector({ match }: MatchFantasySelectorProps) {
         <div className="mb-10">
           <h3 className="text-xl font-bold mb-5 text-gray-800 dark:text-gray-100 flex items-center">
             <span className="inline-block w-8 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded mr-3"></span>
-            Today's Playing XI
+            Today&apos;s Playing XI
           </h3>
           <MatchTeams teams={match.teams} teamNames={teamNames} />
         </div>
