@@ -124,9 +124,18 @@ const getAISuggestedTeamCached = unstable_cache(
 );
 
 export default async function Home() {
-  const todaysMatches = matchesSchedule.matches.filter((match) =>
-    dayjs(match.date).isSame(dayjs().tz("Asia/Kolkata"), "day")
-  );
+  console.log('Server time:', new Date().toISOString());
+  console.log('Kolkata time:', dayjs().tz("Asia/Kolkata").format());
+
+  const todaysMatches = matchesSchedule.matches.filter((match) => {
+    const matchDate = dayjs.tz(`${match.date} ${match.start}`, "DD-MMM-YY h:mm A", "Asia/Kolkata");
+    const nowInKolkata = dayjs().tz("Asia/Kolkata");
+
+    console.log('Match date:', match.date, 'parsed as:', matchDate.format());
+    console.log('Is same day?', matchDate.isSame(nowInKolkata, "day"));
+
+    return matchDate.isSame(nowInKolkata, "day");
+  });
 
   const matchesWithPlayers: MatchWithPlayers[] = await Promise.all(
     todaysMatches.map(async (match) => {
