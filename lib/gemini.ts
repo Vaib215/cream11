@@ -4,10 +4,31 @@ import {
 } from "@google/generative-ai";
 import { getPlayersCredits } from "./my11circle";
 import { Match } from "@/types/match";
-import { PlayerDetails } from "@/types/player";
-import { getHistoricalData } from "./history";
+import { Player, PlayerDetails, SelectedPlayer } from "@/types/player";
+import { fantasyCricketRules } from "@/constants/rules";
+import historicalData from "@/data/ipl_2024_player_data.json";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+interface FantasyTeamResult {
+  selectedPlayers: Array<{
+    name: string;
+    role: string;
+    team: string;
+    credits: number;
+    isCaptain: boolean;
+    isViceCaptain: boolean;
+  }>;
+  totalCredits: number;
+  captain: string;
+  viceCaptain: string;
+  teamAnalysis?: string;
+  teamStats: {
+    winProbability: number;
+    battingStrength: number;
+    bowlingStrength: number;
+    balanceRating: number;
+  };
+}
 
 export async function getCream11(match: Match) {
   try {
@@ -16,16 +37,17 @@ export async function getCream11(match: Match) {
     const playersCredits = await getPlayersCredits(match);
 
     // Set default credits if not available
-    const playersWithCredits = Object.entries(allPlayers).flatMap(
-      ([team, players]) =>
-        players.map((player) => ({
-          ...player,
-          team,
-          credits:
-            playersCredits.find((p) => p.name === player.name)?.credits || 8, // Random credits between 6-10 if not available
-        }))
+    const playersWithCredits = Object.entries(
+      allPlayers as Record<string, PlayerDetails[]>
+    ).flatMap(([team, players]) =>
+      players.map((player: PlayerDetails) => ({
+        ...player,
+        team,
+        history: historicalData[player.name as keyof typeof historicalData],
+        credits:
+          playersCredits.find((p) => p.name === player.name)?.credits || 8,
+      }))
     );
-    const historicalData = getHistoricalData(allPlayers);
 
     const model = genAI.getGenerativeModel({
       model: "models/gemini-2.0-flash",
@@ -190,27 +212,6 @@ export async function getCream11(match: Match) {
         },
       ],
     });
-    // Define result type
-    interface FantasyTeamResult {
-      selectedPlayers: Array<{
-        name: string;
-        role: string;
-        team: string;
-        credits: number;
-        isCaptain: boolean;
-        isViceCaptain: boolean;
-      }>;
-      totalCredits: number;
-      captain: string;
-      viceCaptain: string;
-      teamAnalysis?: string;
-      teamStats: {
-        winProbability: number;
-        battingStrength: number;
-        bowlingStrength: number;
-        balanceRating: number;
-      };
-    }
 
     // Parse and structure the response
     let result: FantasyTeamResult;
@@ -269,6 +270,144 @@ export async function getCream11(match: Match) {
   }
 }
 
+interface ExtendedSelectedPlayer extends SelectedPlayer {
+  team: string;
+}
+
+export async function getCustomTeamAnalysis(
+  match: Match,
+  selectedPlayers: ExtendedSelectedPlayer[],
+  aiSuggestedTeam: Player[]
+) {
+  try {
+    // First get all players from both teams
+    const allPlayers = await getPlaying11OfTeams(match);
+    const playersCredits = await getPlayersCredits(match);
+    const allPlayersWithHistory = Object.entries(
+      allPlayers as Record<string, PlayerDetails[]>
+    ).flatMap(([team, players]) =>
+      players.map((player: PlayerDetails) => ({
+        ...player,
+        team,
+        history: historicalData[player.name as keyof typeof historicalData],
+      }))
+    );
+
+    const model = genAI.getGenerativeModel({
+      model: "models/gemini-2.0-flash",
+      systemInstruction: `You are an expert in fantasy cricket analyst. Your task is to analyze a given team based on comprehensive historical data of all available players.
+
+      CRITICAL INSTRUCTIONS:
+      1. The AI's suggested team is always the optimal team with the highest possible win probability.
+      2. Any modifications to the AI team will result in lower performance metrics.
+      3. Modified teams should have win probabilities 5-10% lower than the AI team.
+      4. All statistics must be realistic and based on historical data.
+      5. Provide detailed justification for all statistical changes.
+      6. Never suggest that a modified team could perform better than the AI's optimal selection.
+      7. Consider the complete player pool when evaluating selected players.
+      8. Compare each selected player against all available alternatives.
+      9. Factor in team composition and role balance.
+      10. Use exact statistical values from historical data.
+      
+      ${fantasyCricketRules}`,
+    });
+
+    const { response } = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `
+              Analyze this fantasy cricket team for ${match.home} vs ${
+                match.away
+              }.
+              
+              COMPLETE HISTORICAL DATA OF ALL PLAYERS:
+              ${JSON.stringify(allPlayersWithHistory, null, 2)}
+
+              AVAILABLE PLAYERS WITH CREDITS:
+              ${JSON.stringify(
+                Object.entries(allPlayers).flatMap(([team, players]) =>
+                  players.map((player) => ({
+                    ...player,
+                    team,
+                    credits:
+                      playersCredits.find((p) => p.name === player.name)
+                        ?.credits || 8,
+                  }))
+                ),
+                null,
+                2
+              )}
+              
+              SELECTED TEAM TO ANALYZE:
+              ${JSON.stringify(selectedPlayers, null, 2)}
+              
+              AI'S SUGGESTED TEAM (THE OPTIMAL TEAM):
+              ${JSON.stringify(aiSuggestedTeam, null, 2)}
+
+              IMPORTANT ANALYSIS REQUIREMENTS:
+              1. Compare selected players with ALL available players in their roles
+              2. Calculate realistic win probability (must be lower than AI team if modified)
+              3. Evaluate batting strength, bowling strength, and team balance
+              4. Provide detailed player-by-player analysis with exact statistics
+              5. Explain all statistical adjustments with specific reasons
+              6. Compare each selection against available alternatives
+              7. Consider team composition impact on overall performance
+              
+              Respond with a JSON object containing:
+              {
+                "selectedPlayers": Array of selected players with all details,
+                "totalCredits": Total credits used,
+                "captain": Captain name,
+                "viceCaptain": Vice-captain name,
+                "teamAnalysis": Detailed analysis explaining all statistics and comparisons,
+                "teamStats": {
+                  "winProbability": number (0-100),
+                  "battingStrength": number (0-100),
+                  "bowlingStrength": number (0-100),
+                  "balanceRating": number (0-100)
+                },
+                "comparisonWithOptimal": {
+                  "probabilityDelta": Difference from AI team,
+                  "keyDifferences": Array of main differences,
+                  "riskFactors": Array of potential risks,
+                  "missedOpportunities": Array of better alternatives not selected
+                }
+              }
+              `,
+            },
+          ],
+        },
+      ],
+    });
+
+    // Parse and return the AI's analysis
+    try {
+      const responseText = response.text();
+      const jsonMatch =
+        responseText.match(/```json\n([\s\S]*?)\n```/) ||
+        responseText.match(/{[\s\S]*?}/);
+
+      if (!jsonMatch) {
+        throw new Error("Could not extract JSON from response");
+      }
+
+      const jsonStr = jsonMatch[0].startsWith("{")
+        ? jsonMatch[0]
+        : jsonMatch[1];
+      return JSON.parse(jsonStr);
+    } catch (error) {
+      console.error("Failed to parse AI response:", error);
+      throw new Error("Failed to analyze team");
+    }
+  } catch (err) {
+    console.error("Error in getCustomTeamAnalysis:", err);
+    throw err;
+  }
+}
+
 export async function getPlaying11OfTeams(match: Match) {
   try {
     const model = genAI.getGenerativeModel({
@@ -283,7 +422,6 @@ export async function getPlaying11OfTeams(match: Match) {
       
       YOU MUST RETURN ONLY AND ONLY THE JSON OBJECT WITH PLAYER DETAILS. Here is the expected response format:
     
-    \`\`\`json
     {
       "Mumbai Indians": [
         {
@@ -311,17 +449,26 @@ export async function getPlaying11OfTeams(match: Match) {
         }
       ]
     }
-    \`\`\`
-    
+      
     The player roles should be one of: BATTER, BOWLER, ALL_ROUNDER, or WICKET_KEEPER.
     Make sure to include accurate player information including their correct role, captain/vice-captain status, and impact player status.
     
-    DO NOT include image URLs in your response. The image URLs will be added from our database separately.
-    `,
+    DO NOT include image URLs in your response. The image URLs will be added from our database separately.`,
     });
-    const { response } = await model.generateContent(
-      `Give me the playing 11 players for ${match.home} vs ${match.away} match on ${match.date} at ${match.venue} with complete player details including role, captain, vice-captain, and impact player status. DO NOT include image URLs in your response.`
-    );
+
+    const { response } = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `Give me the playing 11 players for ${match.home} vs ${match.away} match on ${match.date} at ${match.venue} with complete player details including role, captain, vice-captain, and impact player status. DO NOT include image URLs in your response.`,
+            },
+          ],
+        },
+      ],
+    });
+
     const playersData = JSON.parse(
       response
         .text()
@@ -329,12 +476,12 @@ export async function getPlaying11OfTeams(match: Match) {
         .replace(/\n```$/, "")
         .replaceAll("\n", "")
     ) as Record<string, PlayerDetails[]>;
+
     return playersData;
   } catch (err) {
     if (err instanceof GoogleGenerativeAIError) {
       console.log(err.message);
     }
-
     // Return empty arrays as fallback
     return {
       [match.home]: [],

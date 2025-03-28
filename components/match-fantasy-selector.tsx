@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { MatchHeader } from "@/components/match-header";
-import { TeamsSection } from "@/components/teams-section";
 import { FantasyTeamSection } from "@/components/fantasy-team-section";
 import { MatchWithPlayers } from "@/types/match";
+import { MatchTeams } from "./match-teams";
 
 interface MatchFantasySelectorProps {
   match: MatchWithPlayers;
@@ -13,7 +12,6 @@ interface MatchFantasySelectorProps {
 export function MatchFantasySelector({ match }: MatchFantasySelectorProps) {
   const teamNames = Object.keys(match.teams);
 
-  // Memoize allPlayers to prevent recalculation on every render
   const allPlayers = useMemo(
     () => [
       ...match.teams[teamNames[0]].players.map((player) => ({
@@ -33,18 +31,13 @@ export function MatchFantasySelector({ match }: MatchFantasySelectorProps) {
   );
 
   return (
-    <div>
-      <MatchHeader teamNames={teamNames} match={match} />
+    <div className="flex flex-col h-full gap-4 p-4">
+      <MatchTeams teams={match.teams} teamNames={teamNames} />
 
-      {/* Match Content */}
-      <div className="p-8">
-        <TeamsSection teams={match.teams} teamNames={teamNames} />
-
-        <FantasyTeamSection
-          allPlayers={allPlayers}
-          aiSuggestedTeam={match.aiSuggestedTeam}
-        />
-      </div>
+      <FantasyTeamSection
+        allPlayers={allPlayers}
+        aiSuggestedTeam={match.aiSuggestedTeam}
+      />
     </div>
   );
 }

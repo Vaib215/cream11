@@ -8,6 +8,13 @@ export interface PlayerDetails {
   credits: number;
 }
 
+export interface SelectedPlayer extends PlayerDetails {
+  credits: number;
+  isCaptain: boolean;
+  isViceCaptain: boolean;
+  isImpactPlayer: boolean;
+}
+
 export interface Player extends PlayerDetails {
   team: string;
   teamColor: string;

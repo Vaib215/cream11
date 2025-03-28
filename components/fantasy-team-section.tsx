@@ -4,8 +4,12 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { Player } from "@/types/player";
 import { FantasyTeamResult } from "@/types/match";
 import { FantasyTeamBuilder } from "@/components/fantasy-team-builder";
-import { TeamStats } from "@/components/team-stats";
-import { FantasyTeamControls } from "@/components/fantasy-team-controls";
+import { TeamPerformanceMetrics } from "@/components/team-performance-metrics";
+import { TeamAnalysis } from "@/components/team-analysis";
+import { analyzeTeam } from "@/app/actions";
+import { Loader2, RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface FantasyTeamSectionProps {
   allPlayers: Player[];
@@ -16,9 +20,10 @@ export function FantasyTeamSection({
   allPlayers,
   aiSuggestedTeam,
 }: FantasyTeamSectionProps) {
-  const [loading, setLoading] = useState(false);
+  const [reanalyzing, setReanalyzing] = useState(false);
   const [totalCredits, setTotalCredits] = useState(0);
   const [fantasyTeam, setFantasyTeam] = useState<Player[]>([]);
+  const [needsReanalysis, setNeedsReanalysis] = useState(false);
   const [stats, setStats] = useState({
     winProbability: 0,
     battingStrength: 0,
@@ -107,7 +112,6 @@ export function FantasyTeamSection({
       }
     }
 
-    // Fall back to basic suggestion if AI team is not available
     return createSuggestedBest11();
   }, [aiSuggestedTeam, allPlayers, createSuggestedBest11]);
 
@@ -185,10 +189,48 @@ export function FantasyTeamSection({
       );
       setTotalCredits(credits);
 
-      // Calculate stats
-      calculateAndSetStats(newTeam);
+      // Check if team differs from AI suggestion
+      if (aiSuggestedTeam?.selectedPlayers) {
+        // First check if team sizes match
+        if (aiSuggestedTeam.selectedPlayers.length !== newTeam.length) {
+          setNeedsReanalysis(true);
+          calculateAndSetStats(newTeam);
+          return;
+        }
+
+        // Check if all players match exactly including their roles
+        const teamDiffers = !newTeam.every((player) => {
+          const aiPlayer = aiSuggestedTeam.selectedPlayers.find(
+            (p) => p.name === player.name
+          );
+          return (
+            aiPlayer &&
+            aiPlayer.isCaptain === player.isCaptain &&
+            aiPlayer.isViceCaptain === player.isViceCaptain &&
+            aiPlayer.role === player.role
+          );
+        });
+
+        setNeedsReanalysis(teamDiffers);
+
+        // If team matches AI suggestion exactly, use AI stats
+        if (!teamDiffers && aiSuggestedTeam.teamStats) {
+          setStats({
+            winProbability: aiSuggestedTeam.teamStats.winProbability,
+            battingStrength: aiSuggestedTeam.teamStats.battingStrength,
+            bowlingStrength: aiSuggestedTeam.teamStats.bowlingStrength,
+            balanceRating: aiSuggestedTeam.teamStats.balanceRating,
+          });
+        } else {
+          // Calculate stats for modified team
+          calculateAndSetStats(newTeam);
+        }
+      } else {
+        // If no AI suggestion available, just calculate stats
+        calculateAndSetStats(newTeam);
+      }
     },
-    [calculateAndSetStats]
+    [calculateAndSetStats, aiSuggestedTeam]
   );
 
   // Reset team to a basic suggested team
@@ -197,73 +239,29 @@ export function FantasyTeamSection({
     handleFantasyTeamChange(suggestedTeam);
   }, [createSuggestedBest11, handleFantasyTeamChange]);
 
-  // Use AI suggested team if available
-  const useAITeam = useCallback(() => {
-    setLoading(true);
-
+  // Function to reanalyze the modified team
+  const handleReanalyze = async () => {
+    setReanalyzing(true);
     try {
-      if (
-        aiSuggestedTeam?.selectedPlayers &&
-        aiSuggestedTeam.selectedPlayers.length > 0
-      ) {
-        const aiPlayers = aiSuggestedTeam.selectedPlayers
-          .map(
-            (aiPlayer: {
-              name: string;
-              isCaptain?: boolean;
-              isViceCaptain?: boolean;
-            }) => {
-              const player = allPlayers.find((p) => p.name === aiPlayer.name);
-              if (player) {
-                return {
-                  ...player,
-                  isCaptain:
-                    aiPlayer.isCaptain ||
-                    player.name === aiSuggestedTeam?.captain,
-                  isViceCaptain:
-                    aiPlayer.isViceCaptain ||
-                    player.name === aiSuggestedTeam?.viceCaptain,
-                };
-              }
-              return null;
-            }
-          )
-          .filter(Boolean) as Player[];
+      const aiSuggestedTeamPlayers =
+        aiSuggestedTeam?.selectedPlayers as Player[];
+      const result = await analyzeTeam(fantasyTeam, aiSuggestedTeamPlayers);
 
-        if (aiPlayers.length > 0) {
-          setFantasyTeam(aiPlayers);
-
-          if (aiSuggestedTeam.totalCredits) {
-            setTotalCredits(aiSuggestedTeam.totalCredits);
-          } else {
-            // Calculate credits manually if not provided
-            const credits = aiPlayers.reduce(
-              (total, player) => total + (player.credits || 0),
-              0
-            );
-            setTotalCredits(credits);
-          }
-
-          // Update stats based on AI team
-          if (aiSuggestedTeam.teamStats) {
-            setStats({
-              winProbability: aiSuggestedTeam.teamStats.winProbability,
-              battingStrength: aiSuggestedTeam.teamStats.battingStrength,
-              bowlingStrength: aiSuggestedTeam.teamStats.bowlingStrength,
-              balanceRating: aiSuggestedTeam.teamStats.balanceRating,
-            });
-          } else {
-            // Fall back to calculation if AI stats are not available
-            calculateAndSetStats(aiPlayers);
-          }
-        }
+      if (result?.teamStats) {
+        setStats({
+          winProbability: result.teamStats.winProbability,
+          battingStrength: result.teamStats.battingStrength,
+          bowlingStrength: result.teamStats.bowlingStrength,
+          balanceRating: result.teamStats.balanceRating,
+        });
+        setNeedsReanalysis(false);
       }
     } catch (error) {
-      console.error("Failed to apply AI team:", error);
+      console.error("Failed to reanalyze team:", error);
     } finally {
-      setLoading(false);
+      setReanalyzing(false);
     }
-  }, [aiSuggestedTeam, allPlayers, calculateAndSetStats]);
+  };
 
   // Initialize team and stats on component mount
   useEffect(() => {
@@ -301,26 +299,89 @@ export function FantasyTeamSection({
   }, [initialTeam, aiSuggestedTeam, calculateAndSetStats]);
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
-      <FantasyTeamControls
-        totalCredits={totalCredits}
-        loading={loading}
-        onUseAITeam={useAITeam}
-        onResetTeam={resetFantasyTeam}
-      />
-
-      <div className="grid md:grid-cols-2 gap-10">
+    <div className="grid md:grid-cols-7 gap-4 md:gap-6">
+      {/* Left section - Team Builder */}
+      <div className="md:col-span-4">
         <FantasyTeamBuilder
           allPlayers={allPlayers}
           fantasyTeam={fantasyTeam}
           onFantasyTeamChange={handleFantasyTeamChange}
         />
-        <TeamStats
-          stats={{
-            ...stats,
-            totalCredits,
-          }}
-          teamAnalysis={aiSuggestedTeam?.teamAnalysis}
+      </div>
+
+      {/* Right section - Stats & Controls */}
+      <div
+        className={cn(
+          "md:col-span-3 relative space-y-4 md:space-y-6",
+          reanalyzing && "blur-sm"
+        )}
+      >
+        <div className="flex justify-between items-center">
+          <Button
+            variant="outline"
+            onClick={resetFantasyTeam}
+            className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Reset Team
+          </Button>
+          {needsReanalysis && (
+            <Button
+              onClick={handleReanalyze}
+              disabled={reanalyzing}
+              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-600 hover:to-blue-600"
+            >
+              {reanalyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                "Analyze Team"
+              )}
+            </Button>
+          )}
+        </div>
+        {/* Credits Display */}
+        <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Total Credits
+            </span>
+            <span
+              className={`font-bold ${
+                totalCredits > 100
+                  ? "text-red-500"
+                  : "text-gray-900 dark:text-gray-100"
+              }`}
+            >
+              {totalCredits.toFixed(1)}/100.0
+            </span>
+          </div>
+          <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full ${
+                totalCredits > 100
+                  ? "bg-red-500"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+              }`}
+              style={{ width: `${Math.min(totalCredits, 100)}%` }}
+            />
+          </div>
+        </div>
+        <TeamPerformanceMetrics
+          winProbability={stats.winProbability}
+          battingStrength={stats.battingStrength}
+          bowlingStrength={stats.bowlingStrength}
+          balanceRating={stats.balanceRating}
+        />
+
+        <TeamAnalysis
+          analysis={
+            aiSuggestedTeam?.teamAnalysis ||
+            "No analysis available yet. Select your team and click Analyze."
+          }
+          isLoading={reanalyzing}
         />
       </div>
     </div>

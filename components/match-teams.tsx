@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Crown, Shield, Zap, Target, UserRound, Activity } from "lucide-react";
 import { PlayerDetails } from "@/types/player";
+import { PlayerImage } from "@/app/components/player-image";
 
 interface MatchTeamsProps {
   teams: Record<
@@ -17,7 +18,7 @@ interface MatchTeamsProps {
 
 export function MatchTeams({ teams, teamNames }: MatchTeamsProps) {
   return (
-    <div className="grid md:grid-cols-2 gap-8">
+    <div className="grid md:grid-cols-2 gap-4">
       {teamNames.map((teamName) => (
         <div
           key={teamName}
@@ -80,13 +81,12 @@ export function MatchTeams({ teams, teamNames }: MatchTeamsProps) {
                 }}
               >
                 {/* Player Image */}
-                <div className="relative w-full h-24">
-                  <Image
+                <div className="relative w-full h-24 flex items-center justify-center bg-gray-50 dark:bg-gray-800/50">
+                  <PlayerImage
                     src={player.imageUrl}
                     alt={player.name}
-                    width={100}
-                    height={100}
-                    className="object-cover w-full h-full"
+                    size={80}
+                    className="mx-auto"
                   />
 
                   {/* Special Badges */}
