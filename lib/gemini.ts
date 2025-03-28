@@ -4,8 +4,9 @@ import {
 } from "@google/generative-ai";
 import { getPlayersCredits } from "./my11circle";
 import { Match } from "@/types/match";
-import { PlayerDetails } from "@/types/player";
+import { PlayerDetails, SelectedPlayer } from "@/types/player";
 import { getHistoricalData } from "./history";
+import { fantasyCricketRules } from "@/constants/rules";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -129,9 +130,8 @@ export async function getCream11(match: Match) {
           parts: [
             {
               text: `
-              I'm building a fantasy cricket team for a match between ${
-                match.home
-              } and ${match.away}.
+              I'm building a fantasy cricket team for a match between ${match.home
+                } and ${match.away}.
               Here are all the available players with their roles and credits:
               
               ${JSON.stringify(playersWithCredits, null, 2)}
@@ -269,6 +269,175 @@ export async function getCream11(match: Match) {
   }
 }
 
+export async function getCustomTeamAnalysis(match: Match, selectedPlayers: SelectedPlayer[]) {
+  try {
+    const historicalData = getHistoricalData(selectedPlayers);
+    const model = genAI.getGenerativeModel({
+      model: "models/gemini-2.0-flash",
+      systemInstruction: `You are an expert in fantasy cricket. You are given a CSV file containing player data with following attributes:
+
+ Year: The year of the IPL season, indicating 2008 to 2024 in this case.
+      Player_Name: Names of the players showcasing their prowess on the cricket field.
+      Matches_Batted: The number of matches in which the player batted.
+      Not_Outs: Number of times the player remained not out while batting.
+      Runs_Scored: Total runs scored by the player throughout the season.
+      Highest_Score: Player's highest individual score in a single match.
+      Batting_Average: The average runs scored per dismissal.
+      Balls_Faced: Total number of balls faced by the player while batting.
+      Batting_Strike_Rate:The rate at which the player scores runs per 100 balls faced.
+      Centuries: Number of centuries scored by the player.
+      Half_Centuries: Number of half-centuries scored by the player.
+      Fours: Total number of boundaries (4 runs) hit by the player.
+      Sixes: Total number of sixes (6 runs) hit by the player.
+      Catches_Taken: Number of catches taken by the player in the field.
+      Stumpings: Number of times the player effected a stumping as a wicketkeeper.
+      Matches_Bowled: The number of matches in which the player bowled.
+      Balls_Bowled: Total number of balls bowled by the player.
+      Runs_Conceded: Total runs conceded by the player while bowling.
+      Wickets_Taken: Number of wickets taken by the player.
+      Best_Bowling_Match: Player's best bowling performance in a single match.
+      Bowling_Average: The average runs conceded per wicket taken.
+      Economy_Rate: The average number of runs conceded per over bowled.
+      Bowling_Strike_Rate: The rate at which the player takes wickets per ball bowled.
+      Four_Wicket_Hauls: Number of times the player took four wickets in an inning.
+      Five_Wicket_Hauls: Number of times the player took five wickets or more in an inning.
+
+      HERE ARE THE RULES OF FANTASY CRICKET:
+      ${fantasyCricketRules}
+
+      Here is the historical data of the players that the user has selected:
+      ${JSON.stringify(historicalData, null, 2)}
+      `,
+    });
+
+    const { response } = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `
+              I'm building a fantasy cricket team for a match between ${match.home
+                } and ${match.away}.
+              Here are all the players that I have selected to be in my team with their roles and credits and the following information:
+
+              Name: Name of the player
+              Role: Role of the player
+              Team: Team of the player
+              Credits: Credits of the player
+              IsCaptain: Whether the player is the captain of the team
+              IsViceCaptain: Whether the player is the vice-captain of the team
+              IsImpactPlayer: Whether the player is an impact player.
+              
+              ${JSON.stringify(selectedPlayers, null, 2)}
+              
+              Base your predictions HEAVILY on the historical data provided. Use specific statistics from the historical data to justify each selection. The historical data should be the primary factor in your decision-making.
+              
+              Also provide a detailed team analysis that evaluates:
+              1. Each selected player individually with their key statistics (include exact numbers for batting averages, strike rates, economy rates, wicket counts, etc.)
+              2. Recent form with specific match performances and numerical data points
+              3. For captain and vice-captain, provide detailed statistical justification with exact numbers from their historical performances
+              4. Overall team balance and strategy with quantitative assessment
+              
+              Also provide team stats with the following values:
+              - winProbability: a number between 0-100 representing the team's chance of winning
+              - battingStrength: a number between 0-100 representing the team's batting quality
+              - bowlingStrength: a number between 0-100 representing the team's bowling quality
+              - balanceRating: a number between 0-100 representing how well-balanced the team is
+              
+              Respond with a JSON object in this format:
+              {
+                "selectedPlayers": [
+                  {
+                    "name": "Player Name",
+                    "role": "ROLE",
+                    "team": "Team Name",
+                    "credits": 8,
+                    "isCaptain": false,
+                    "isViceCaptain": false
+                  }
+                ],
+                "totalCredits": 98,
+                "captain": "Player Name",
+                "viceCaptain": "Player Name",
+                "teamAnalysis": "Detailed analysis of each player with their statistics, performances, and reasons for selection...",
+                "teamStats": {
+                  "winProbability": 75,
+                  "battingStrength": 80,
+                  "bowlingStrength": 70,
+                  "balanceRating": 85
+                }
+              }
+            `,
+            },
+          ],
+        },
+      ],
+    });
+
+    interface FantasyTeamResult {
+      selectedPlayers: Array<{
+        name: string;
+        role: string;
+        team: string;
+        credits: number;
+        isCaptain: boolean;
+        isViceCaptain: boolean;
+      }>;
+      totalCredits: number;
+      captain: string;
+      viceCaptain: string;
+      teamAnalysis?: string;
+      teamStats: {
+        winProbability: number;
+        battingStrength: number;
+        bowlingStrength: number;
+        balanceRating: number;
+      };
+    }
+
+    // Parse and structure the response
+    let result: FantasyTeamResult;
+    try {
+      const responseText = response.text();
+      const jsonMatch =
+        responseText.match(/```json\n([\s\S]*?)\n```/) ||
+        responseText.match(/{[\s\S]*?}/);
+
+      if (jsonMatch) {
+        const jsonStr = jsonMatch[0].startsWith("{")
+          ? jsonMatch[0]
+          : jsonMatch[1];
+        result = JSON.parse(jsonStr) as FantasyTeamResult;
+      } else {
+        throw new Error("Could not extract JSON from response");
+      }
+
+      // Ensure captain and vice-captain are set within the player objects
+      if (result.captain && result.viceCaptain) {
+        result.selectedPlayers = result.selectedPlayers.map((player) => ({
+          ...player,
+          isCaptain: player.name === result.captain,
+          isViceCaptain: player.name === result.viceCaptain,
+        }));
+      }
+
+      // If team analysis is missing, generate a default one
+      if (!result.teamAnalysis) {
+        result.teamAnalysis =
+          "This team has been automatically selected based on fantasy point potential. The captain and vice-captain have been chosen as the highest potential fantasy point scorers.";
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Failed to parse AI response:", error);
+      throw new Error("Failed to select fantasy team");
+    }
+  } catch (err) {
+    console.error("Error in getCustomTeamAnalysis:", err);
+  }
+}
+
 export async function getPlaying11OfTeams(match: Match) {
   try {
     const model = genAI.getGenerativeModel({
@@ -329,12 +498,13 @@ export async function getPlaying11OfTeams(match: Match) {
         .replace(/\n```$/, "")
         .replaceAll("\n", "")
     ) as Record<string, PlayerDetails[]>;
+    console.log(playersData);
     return playersData;
   } catch (err) {
     if (err instanceof GoogleGenerativeAIError) {
       console.log(err.message);
     }
-
+    console.log(err);
     // Return empty arrays as fallback
     return {
       [match.home]: [],

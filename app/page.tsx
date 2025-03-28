@@ -139,8 +139,8 @@ export default async function Home() {
               ...player,
               credits: player.credits || 9.0,
               imageUrl:
-                `/players/${player.name
-                  .toLowerCase()
+                `/players/${player?.name
+                  ?.toLowerCase()
                   .replace(/[\s-]+/g, "_")
                   .replaceAll(".", "")}.webp` ||
                 "/players/default-headshot.webp",
