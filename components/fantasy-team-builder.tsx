@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import {
   ChevronsUpDown,
   X,
-  UserPlus,
   Activity,
   Target,
   UserRound,
@@ -12,6 +11,7 @@ import {
   Shield,
   Crown,
   Zap,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,8 +27,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Player } from "@/types/player";
-import Image from "next/image";
+import { PlayerImage } from "@/app/components/player-image";
 
 interface FantasyTeamBuilderProps {
   allPlayers: Player[];
@@ -71,6 +77,26 @@ export function FantasyTeamBuilder({
 
   const handleRemove = (playerName: string) => {
     const newTeam = fantasyTeam.filter((p) => p.name !== playerName);
+    onFantasyTeamChange(newTeam);
+  };
+
+  const handleCaptainSelection = (playerName: string) => {
+    const newTeam = fantasyTeam.map((player) => ({
+      ...player,
+      isCaptain: player.name === playerName,
+      // If this player is becoming captain and was vice-captain, remove vice-captain status
+      isViceCaptain: player.name === playerName ? false : player.isViceCaptain,
+    }));
+    onFantasyTeamChange(newTeam);
+  };
+
+  const handleViceCaptainSelection = (playerName: string) => {
+    const newTeam = fantasyTeam.map((player) => ({
+      ...player,
+      // If this player is becoming vice-captain and was captain, remove captain status
+      isCaptain: player.name === playerName ? false : player.isCaptain,
+      isViceCaptain: player.name === playerName,
+    }));
     onFantasyTeamChange(newTeam);
   };
 
@@ -151,53 +177,34 @@ export function FantasyTeamBuilder({
   const { batters, bowlers, allRounders, wicketKeepers } = groupPlayersByRole();
 
   return (
-    <div className="space-y-6" ref={containerRef}>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Fantasy Team Section */}
       <div
-        className="p-5 rounded-xl bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/10 border border-purple-100 dark:border-purple-900/30 shadow-sm"
+        className="p-3 sm:p-4 md:p-5 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 shadow-sm"
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, "fantasy")}
+        ref={containerRef}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            <h4 className="font-bold text-gray-800 dark:text-gray-200">
-              Your Cream 11 Squad
+            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
+            <h4 className="font-bold text-sm sm:text-base text-gray-800 dark:text-gray-200">
+              Your Fantasy Team
             </h4>
           </div>
-          <div className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+          <div className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
             {fantasyTeam.length}/11 Players
           </div>
         </div>
 
-        <div className="space-y-5">
-          {/* Wicket Keepers */}
-          {wicketKeepers.length > 0 && (
-            <div className="space-y-2">
-              <h5 className="text-sm font-semibold flex items-center text-gray-700 dark:text-gray-300">
-                <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-sky-500 to-cyan-600 rounded-full mr-2"></span>
-                Wicket Keepers
-              </h5>
-              <div className="flex flex-wrap gap-2">
-                {wicketKeepers.map((player) => (
-                  <EnhancedPlayerCard
-                    key={player.name}
-                    player={player}
-                    onRemove={() => handleRemove(player.name)}
-                    onDragStart={(e) => handleDragStart(e, player, true)}
-                    onDragEnd={handleDragEnd}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Batters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Batters Section */}
           <div className="space-y-2">
-            <h5 className="text-sm font-semibold flex items-center text-gray-700 dark:text-gray-300">
-              <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full mr-2"></span>
-              Batters
-            </h5>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Batters ({batters.length})</span>
+            </div>
+            <div className="space-y-2">
               {batters.map((player) => (
                 <EnhancedPlayerCard
                   key={player.name}
@@ -205,37 +212,20 @@ export function FantasyTeamBuilder({
                   onRemove={() => handleRemove(player.name)}
                   onDragStart={(e) => handleDragStart(e, player, true)}
                   onDragEnd={handleDragEnd}
+                  onCaptainSelect={handleCaptainSelection}
+                  onViceCaptainSelect={handleViceCaptainSelection}
                 />
               ))}
             </div>
           </div>
 
-          {/* All-rounders */}
+          {/* Bowlers Section */}
           <div className="space-y-2">
-            <h5 className="text-sm font-semibold flex items-center text-gray-700 dark:text-gray-300">
-              <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full mr-2"></span>
-              All-rounders
-            </h5>
-            <div className="flex flex-wrap gap-2">
-              {allRounders.map((player) => (
-                <EnhancedPlayerCard
-                  key={player.name}
-                  player={player}
-                  onRemove={() => handleRemove(player.name)}
-                  onDragStart={(e) => handleDragStart(e, player, true)}
-                  onDragEnd={handleDragEnd}
-                />
-              ))}
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Bowlers ({bowlers.length})</span>
             </div>
-          </div>
-
-          {/* Bowlers */}
-          <div className="space-y-2">
-            <h5 className="text-sm font-semibold flex items-center text-gray-700 dark:text-gray-300">
-              <span className="inline-block w-1.5 h-4 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full mr-2"></span>
-              Bowlers
-            </h5>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {bowlers.map((player) => (
                 <EnhancedPlayerCard
                   key={player.name}
@@ -243,47 +233,87 @@ export function FantasyTeamBuilder({
                   onRemove={() => handleRemove(player.name)}
                   onDragStart={(e) => handleDragStart(e, player, true)}
                   onDragEnd={handleDragEnd}
+                  onCaptainSelect={handleCaptainSelection}
+                  onViceCaptainSelect={handleViceCaptainSelection}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* All Rounders Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>All Rounders ({allRounders.length})</span>
+            </div>
+            <div className="space-y-2">
+              {allRounders.map((player) => (
+                <EnhancedPlayerCard
+                  key={player.name}
+                  player={player}
+                  onRemove={() => handleRemove(player.name)}
+                  onDragStart={(e) => handleDragStart(e, player, true)}
+                  onDragEnd={handleDragEnd}
+                  onCaptainSelect={handleCaptainSelection}
+                  onViceCaptainSelect={handleViceCaptainSelection}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Wicket Keepers Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <UserRound className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Wicket Keepers ({wicketKeepers.length})</span>
+            </div>
+            <div className="space-y-2">
+              {wicketKeepers.map((player) => (
+                <EnhancedPlayerCard
+                  key={player.name}
+                  player={player}
+                  onRemove={() => handleRemove(player.name)}
+                  onDragStart={(e) => handleDragStart(e, player, true)}
+                  onDragEnd={handleDragEnd}
+                  onCaptainSelect={handleCaptainSelection}
+                  onViceCaptainSelect={handleViceCaptainSelection}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Add Player Button */}
-        <div className="mt-5">
+        <div className="mt-4">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                className="w-full justify-between border-dashed border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 bg-white dark:bg-gray-800"
-                disabled={fantasyTeam.length >= 11}
+                className="w-full justify-between text-xs sm:text-sm"
               >
-                <div className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                  {fantasyTeam.length >= 11 ? "Team Complete" : "Add Player"}
-                </div>
-                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                Add Player
+                <ChevronsUpDown className="ml-2 h-3 w-3 sm:h-4 sm:w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0">
               <Command className="border border-purple-100 dark:border-purple-900">
                 <CommandInput
                   placeholder="Search player..."
-                  className="border-purple-100 dark:border-purple-900"
+                  className="border-purple-100 dark:border-purple-900 text-sm"
                 />
                 <CommandList>
                   <CommandEmpty>No player found.</CommandEmpty>
-                  <CommandGroup className="max-h-64 overflow-auto">
+                  <CommandGroup className="max-h-48 sm:max-h-64 overflow-auto">
                     {availablePlayers.map((player) => (
                       <CommandItem
                         key={player.name}
                         value={player.name}
                         onSelect={() => handleSelect(player)}
+                        className="text-xs sm:text-sm"
                       >
                         <div
-                          className="h-3 w-3 rounded-full mr-2"
+                          className="h-2 w-2 sm:h-3 sm:w-3 rounded-full mr-2"
                           style={{ backgroundColor: player.teamColor }}
                         ></div>
                         <span className="font-medium">{player.name}</span>
@@ -302,23 +332,23 @@ export function FantasyTeamBuilder({
 
       {/* Available Players Section */}
       <div
-        className="p-5 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 shadow-sm"
+        className="p-3 sm:p-4 md:p-5 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 shadow-sm"
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, "available")}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            <h4 className="font-bold text-gray-800 dark:text-gray-200">
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-400" />
+            <h4 className="font-bold text-sm sm:text-base text-gray-800 dark:text-gray-200">
               Available Players
             </h4>
           </div>
-          <div className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+          <div className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
             {availablePlayers.length} Players
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
           {availablePlayers.slice(0, 12).map((player) => (
             <EnhancedPlayerCard
               key={player.name}
@@ -331,7 +361,7 @@ export function FantasyTeamBuilder({
           ))}
           {availablePlayers.length > 12 && (
             <div
-              className="flex items-center justify-center p-3 rounded-lg w-[140px] h-[90px] text-xs font-medium text-center text-gray-500 bg-gray-50 dark:bg-gray-700/30 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50"
+              className="flex items-center justify-center p-2 sm:p-3 rounded-lg text-xs font-medium text-center text-gray-500 bg-gray-50 dark:bg-gray-700/30 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50"
               onClick={() => setOpen(true)}
             >
               +{availablePlayers.length - 12} more players
@@ -350,6 +380,8 @@ interface EnhancedPlayerCardProps {
   onDragEnd: (e: React.DragEvent<HTMLDivElement>) => void;
   onClick?: () => void;
   isAvailable?: boolean;
+  onCaptainSelect?: (playerName: string) => void;
+  onViceCaptainSelect?: (playerName: string) => void;
 }
 
 function EnhancedPlayerCard({
@@ -359,133 +391,141 @@ function EnhancedPlayerCard({
   onDragEnd,
   onClick,
   isAvailable = false,
+  onCaptainSelect,
+  onViceCaptainSelect,
 }: EnhancedPlayerCardProps) {
-  const defaultImage =
-    "https://www.cricbuzz.com/a/img/v1/152x152/i1/c170624/profile-placeholder.jpg";
-
   return (
     <div
-      className={`flex flex-col relative w-[140px] h-[90px] cursor-grab rounded-lg overflow-hidden transition-all ${
-        isAvailable ? "bg-white dark:bg-gray-800" : "bg-white dark:bg-gray-800"
-      }`}
-      style={{
-        borderLeft: `3px solid ${player.teamColor}`,
-      }}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
+      className={`relative group flex items-center p-2 sm:p-3 rounded-lg border ${
+        isAvailable
+          ? "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
+          : "border-gray-200 dark:border-gray-700"
+      } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${
+        onClick ? "cursor-pointer" : ""
+      } ${isAvailable ? "hover:shadow-md" : ""}`}
     >
-      <div className="flex h-full p-2">
-        {/* Player Image */}
-        <div className="relative h-full aspect-square mr-2 rounded-md overflow-hidden">
-          <Image
-            src={player.imageUrl || defaultImage}
-            alt={player.name}
-            className="object-cover w-full h-full"
-            width={100}
-            height={100}
-          />
-          <div className="absolute -bottom-1 -right-1 bg-white rounded-full rounded-br-none text-xs px-1 py-0.5">
-            {player.credits}
-          </div>
-        </div>
-
-        {/* Player Details */}
-        <div className="flex-1 flex flex-col">
-          <span className="font-medium text-sm line-clamp-2 text-gray-800 dark:text-gray-200">
-            {player.name}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 mt-auto">
-            {player.team}
-          </span>
-        </div>
-      </div>
-
-      {/* Role Icon */}
-      {player.role && (
-        <div
-          className="absolute top-1 right-1 rounded-full p-1"
-          style={{
-            backgroundColor: getRoleColor(player.role),
-          }}
-        >
-          {getRoleIcon(player.role)}
-        </div>
-      )}
-
-      {/* Special Status Icons */}
-      <div className="absolute bottom-1 right-1 flex gap-1">
+      {/* Player Image */}
+      <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+        <PlayerImage
+          src={player.imageUrl || "/players/default-headshot.webp"}
+          alt={player.name}
+          size={isAvailable ? 30 : 40}
+        />
         {player.isCaptain && (
-          <div className="bg-yellow-400 p-0.5 rounded-full" title="Captain">
-            <Crown className="h-3 w-3 text-white" />
+          <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5">
+            <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-yellow-800" />
           </div>
         )}
         {player.isViceCaptain && (
-          <div className="bg-blue-400 p-0.5 rounded-full" title="Vice Captain">
-            <Shield className="h-3 w-3 text-white" />
-          </div>
-        )}
-        {player.isImpactPlayer && (
-          <div
-            className="bg-purple-500 p-0.5 rounded-full"
-            title="Impact Player"
-          >
-            <Zap className="h-3 w-3 text-white" />
+          <div className="absolute -top-1 -right-1 bg-gray-400 rounded-full p-0.5">
+            <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-800" />
           </div>
         )}
       </div>
 
-      {/* Remove Button (only show for fantasy team) */}
+      {/* Player Info */}
+      <div className="ml-3 flex-grow min-w-0">
+        <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+          {player.name}
+        </h3>
+        <div className="flex items-center justify-between mt-0.5">
+          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+            {player.team}
+          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-[10px] sm:text-xs font-medium text-amber-600 dark:text-amber-400 cursor-help">
+                  <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                  {player.credits}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  Player credit value - You have 100 total credits to build your
+                  team
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {/* Captain and Vice-Captain buttons - Only show for fantasy team players */}
+      {!isAvailable && onCaptainSelect && onViceCaptainSelect && (
+        <div className="absolute -bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCaptainSelect(player.name);
+                  }}
+                  className={`flex items-center justify-center h-5 w-5 rounded-full ${
+                    player.isCaptain
+                      ? "bg-yellow-400 text-yellow-800"
+                      : "bg-gray-100 hover:bg-yellow-100 text-gray-600 hover:text-yellow-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
+                  }`}
+                >
+                  <span className="text-[8px] font-bold">C</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">
+                  {player.isCaptain
+                    ? "Captain (2x points)"
+                    : "Make Captain (2x points)"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViceCaptainSelect(player.name);
+                  }}
+                  className={`flex items-center justify-center h-5 w-5 rounded-full ${
+                    player.isViceCaptain
+                      ? "bg-gray-400 text-gray-800"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+                  }`}
+                >
+                  <span className="text-[8px] font-bold">VC</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">
+                  {player.isViceCaptain
+                    ? "Vice-Captain (1.5x points)"
+                    : "Make Vice-Captain (1.5x points)"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
+      {/* Remove Button */}
       {onRemove && (
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute top-0 left-0 h-6 w-6 p-0 rounded-full hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+          className="absolute -top-1.5 -right-1.5 hidden group-hover:flex items-center justify-center h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900"
         >
-          <X className="h-3 w-3" />
-          <span className="sr-only">Remove</span>
-        </Button>
+          <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-600 dark:text-red-400" />
+        </button>
       )}
     </div>
   );
-}
-
-function getRoleIcon(role: string) {
-  switch (role) {
-    case "BATTER":
-      return <Activity className="h-3 w-3 text-white" />;
-    case "BOWLER":
-      return <Target className="h-3 w-3 text-white" />;
-    case "WICKET_KEEPER":
-      return <UserRound className="h-3 w-3 text-white" />;
-    case "ALL_ROUNDER":
-      return (
-        <div className="relative">
-          <Activity className="h-3 w-3 text-white" />
-          <Target className="h-1.5 w-1.5 text-white absolute bottom-0 right-0" />
-        </div>
-      );
-    default:
-      return <Activity className="h-3 w-3 text-white" />;
-  }
-}
-
-function getRoleColor(role: string) {
-  switch (role) {
-    case "BATTER":
-      return "#4F46E5"; // indigo
-    case "BOWLER":
-      return "#10B981"; // emerald
-    case "WICKET_KEEPER":
-      return "#0EA5E9"; // sky blue
-    case "ALL_ROUNDER":
-      return "#8B5CF6"; // violet
-    default:
-      return "#4F46E5"; // indigo
-  }
 }
