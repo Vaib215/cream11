@@ -143,10 +143,10 @@ export function FantasyTeamSection({
       const balance = Math.min(
         100,
         60 +
-          (numWicketKeepers > 0 ? 10 : 0) +
-          (numBatters > 2 ? 10 : 0) +
-          (numBowlers > 2 ? 10 : 0) +
-          (numAllRounders > 1 ? 10 : 0)
+        (numWicketKeepers > 0 ? 10 : 0) +
+        (numBatters > 2 ? 10 : 0) +
+        (numBowlers > 2 ? 10 : 0) +
+        (numAllRounders > 1 ? 10 : 0)
       );
 
       // Calculate batting strength based mainly on batters and all-rounders
@@ -300,22 +300,98 @@ export function FantasyTeamSection({
 
   return (
     <div className="grid md:grid-cols-7 gap-4 md:gap-6">
-      {/* Left section - Team Builder */}
-      <div className="md:col-span-4">
+      {/* Left section - Team Builder and Analysis (on mobile) */}
+      <div className="md:col-span-4 space-y-4">
+        {/* Fantasy Team Builder */}
         <FantasyTeamBuilder
           allPlayers={allPlayers}
           fantasyTeam={fantasyTeam}
           onFantasyTeamChange={handleFantasyTeamChange}
         />
+
+        {/* Stats & Analysis Section - Shows after team on mobile, moves to right on desktop */}
+        <div className="block md:hidden space-y-4">
+          {/* Controls */}
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={resetFantasyTeam}
+              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Reset Team
+            </Button>
+            {needsReanalysis && (
+              <Button
+                onClick={handleReanalyze}
+                disabled={reanalyzing}
+                className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-600 hover:to-blue-600"
+              >
+                {reanalyzing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  "Analyze Team"
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Credits Display */}
+          <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Total Credits
+              </span>
+              <span
+                className={`font-bold ${totalCredits > 100
+                    ? "text-red-500"
+                    : "text-gray-900 dark:text-gray-100"
+                  }`}
+              >
+                {totalCredits.toFixed(1)}/100.0
+              </span>
+            </div>
+            <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${totalCredits > 100
+                    ? "bg-red-500"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  }`}
+                style={{ width: `${Math.min(totalCredits, 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Performance Metrics */}
+          <TeamPerformanceMetrics
+            winProbability={stats.winProbability}
+            battingStrength={stats.battingStrength}
+            bowlingStrength={stats.bowlingStrength}
+            balanceRating={stats.balanceRating}
+          />
+
+          {/* Team Analysis */}
+          <TeamAnalysis
+            analysis={
+              aiSuggestedTeam?.teamAnalysis ||
+              "No analysis available yet. Select your team and click Analyze."
+            }
+            isLoading={reanalyzing}
+          />
+        </div>
       </div>
 
-      {/* Right section - Stats & Controls */}
+      {/* Right section - Stats & Controls (desktop only) */}
       <div
         className={cn(
-          "md:col-span-3 relative space-y-4 md:space-y-6",
+          "hidden md:block md:col-span-3 relative space-y-4 md:space-y-6",
           reanalyzing && "blur-sm"
         )}
       >
+        {/* Desktop Controls */}
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
@@ -342,33 +418,34 @@ export function FantasyTeamSection({
             </Button>
           )}
         </div>
-        {/* Credits Display */}
+
+        {/* Desktop Credits Display */}
         <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Total Credits
             </span>
             <span
-              className={`font-bold ${
-                totalCredits > 100
+              className={`font-bold ${totalCredits > 100
                   ? "text-red-500"
                   : "text-gray-900 dark:text-gray-100"
-              }`}
+                }`}
             >
               {totalCredits.toFixed(1)}/100.0
             </span>
           </div>
           <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full ${
-                totalCredits > 100
+              className={`h-full rounded-full ${totalCredits > 100
                   ? "bg-red-500"
                   : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-              }`}
+                }`}
               style={{ width: `${Math.min(totalCredits, 100)}%` }}
             />
           </div>
         </div>
+
+        {/* Desktop Performance Metrics */}
         <TeamPerformanceMetrics
           winProbability={stats.winProbability}
           battingStrength={stats.battingStrength}
@@ -376,6 +453,7 @@ export function FantasyTeamSection({
           balanceRating={stats.balanceRating}
         />
 
+        {/* Desktop Team Analysis */}
         <TeamAnalysis
           analysis={
             aiSuggestedTeam?.teamAnalysis ||

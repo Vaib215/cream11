@@ -32,12 +32,12 @@ export function MatchFantasySelector({ match }: MatchFantasySelectorProps) {
 
   return (
     <div className="flex flex-col h-full gap-4 p-4">
-      <MatchTeams teams={match.teams} teamNames={teamNames} />
-
       <FantasyTeamSection
         allPlayers={allPlayers}
         aiSuggestedTeam={match.aiSuggestedTeam}
       />
+
+      <MatchTeams teams={match.teams} teamNames={teamNames} />
     </div>
   );
 }
