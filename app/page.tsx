@@ -191,13 +191,23 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-indigo-950">
       <header className="bg-gradient-to-r from-indigo-700 to-purple-700 shadow-md">
-        <div className="container mx-auto px-4 py-5 flex justify-between items-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">
-            <span className="text-orange-400">Cream</span>11
-          </h1>
-          <p className="text-indigo-100 text-sm md:text-base">
-            AI-Powered Fantasy Cricket Team Builder
-          </p>
+        <div className="container mx-auto px-4 py-3 md:py-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
+            <h1 className="text-xl md:text-3xl font-bold text-white flex items-center">
+              <span className="text-orange-400">Cream</span>
+              <span className="text-white">11</span>
+            </h1>
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-4">
+              <p className="text-xs md:text-base text-indigo-200">
+                AI-Powered Fantasy Cricket Team Builder
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-indigo-600/30 text-indigo-200">
+                  IPL 2024
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
