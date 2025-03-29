@@ -51,7 +51,7 @@ export function FeedbackModal() {
 
     try {
       posthog.capture("survey sent", {
-        $survey_id: "018ed910-3b24-0000-e3fd-d51c59aa74b2",
+        $survey_id: "0195e3ad-cebd-0000-138d-e403f7b7e545",
         $survey_response: feedback,
       });
 
