@@ -8,7 +8,7 @@ import { getPlaying11OfTeams, getCream11 } from "@/lib/gemini";
 import { unstable_cache } from "next/cache";
 import { PlayerDetails } from "@/types/player";
 import { getPlayersCredits } from "@/lib/my11circle";
-import { MessagesSquareIcon } from "lucide-react";
+import { FeedbackModal } from "@/components/feedback-modal";
 
 // Configure dayjs to use timezone
 dayjs.extend(utc);
@@ -313,16 +313,8 @@ export default async function Home() {
         </div>
       </footer>
 
-      {/* Feedback Button */}
-      <div className="fixed bottom-2 right-2 md:bottom-4 md:right-4">
-        <button
-          name="feedback-button"
-          className="bg-indigo-600 cursor-pointer relative z-20 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300"
-        >
-          <MessagesSquareIcon className="inline mr-2 w-4 h-4" />
-          Give Feedback
-        </button>
-      </div>
+      {/* Feedback Component */}
+      <FeedbackModal />
     </main>
   );
 }
