@@ -2,7 +2,7 @@ name: Deploy to VM
 
 on:
   push:
-    branches: [ main ]  # Adjust this to your main branch name
+    branches: [main] # Adjust this to your main branch name
 
 jobs:
   deploy:
@@ -20,11 +20,11 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-          # Note: Removed the -p parameter from ssh-keyscan as it doesn't support port specification
+          cat ~/.ssh/known_hosts  # Debug output
 
       - name: Deploy to VM
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          ssh -o StrictHostKeyChecking=accept-new -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd ~/cream11 && \
             git pull && \
             npm install && \
