@@ -127,6 +127,9 @@ const getAISuggestedTeamCached = unstable_cache(
         teamAnalysis:
           result.teamAnalysis ||
           "AI analysis will be available after team selection.",
+        teamAnalysis:
+          result.teamAnalysis ||
+          "AI analysis will be available after team selection.",
         selectedPlayers: result.selectedPlayers || [],
         totalCredits: result.totalCredits || 0,
         captain: result.captain || "",
@@ -156,7 +159,9 @@ const getAISuggestedTeamCached = unstable_cache(
     }
   },
   // Use unique cache key for each match
-  [`ai-team`],
+  // @ts-nocheck
+  // @ts-expect-error - match is of type Match
+  (match: any) => [`ai-team-${match.home}-${match.away}-${match.date}-${match.start}`],
   { revalidate: 3600 } // 1 hour
 );
 

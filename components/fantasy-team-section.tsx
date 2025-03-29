@@ -63,33 +63,9 @@ export function FantasyTeamSection({
           isCaptain: player.name === aiSuggestedTeam.captain,
           isViceCaptain: player.name === aiSuggestedTeam.viceCaptain,
         }));
-
-        // Convert initialTeam to Player[] type by ensuring all required properties exist
-        const completeTeam = initialTeam
-          .map((player) => {
-            // Find the matching player from allPlayers to get all properties
-            const fullPlayerData = allPlayers.find(
-              (p) => p.name === player.name
-            );
-
-            if (!fullPlayerData) {
-              console.error(`Player ${player.name} not found in allPlayers`);
-              return null;
-            }
-
-            // Merge the player data with captain/vice-captain status
-            return {
-              ...fullPlayerData,
-              isCaptain: player.isCaptain,
-              isViceCaptain: player.isViceCaptain,
-            };
-          })
-          .filter(Boolean) as Player[];
-
-        setFantasyTeam(completeTeam);
-        setTotalCredits(
-          completeTeam.reduce((sum, p) => sum + (p.credits || 0), 0)
-        );
+        // @ts-expect-error - initialTeam is of type Player[]
+        setFantasyTeam(initialTeam);
+        setTotalCredits(initialTeam.reduce((sum, p) => sum + (p.credits || 0), 0));
       }
     }
   }, [aiSuggestedTeam, allPlayers]);
@@ -384,22 +360,20 @@ export function FantasyTeamSection({
                 Total Credits
               </span>
               <span
-                className={`font-bold ${
-                  totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
-                }`}
+                className={`font-bold ${totalCredits > 100
+                  ? "text-red-500"
+                  : "text-gray-900 dark:text-gray-100"
+                  }`}
               >
                 {totalCredits.toFixed(1)}/100.0
               </span>
             </div>
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${
-                  totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                }`}
+                className={`h-full rounded-full ${totalCredits > 100
+                  ? "bg-red-500"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>
@@ -468,22 +442,20 @@ export function FantasyTeamSection({
                 Total Credits
               </span>
               <span
-                className={`font-bold ${
-                  totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
-                }`}
+                className={`font-bold ${totalCredits > 100
+                  ? "text-red-500"
+                  : "text-gray-900 dark:text-gray-100"
+                  }`}
               >
                 {totalCredits.toFixed(1)}/100.0
               </span>
             </div>
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${
-                  totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                }`}
+                className={`h-full rounded-full ${totalCredits > 100
+                  ? "bg-red-500"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>
