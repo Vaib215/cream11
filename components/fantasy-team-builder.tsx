@@ -7,13 +7,10 @@ import {
   Activity,
   Target,
   UserRound,
-  Plus,
-  Shield,
   Crown,
   Zap,
   Coins,
   ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -122,36 +119,6 @@ export function FantasyTeamBuilder({
   const handleDragEnd = (e: React.DragEvent) => {
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.classList.remove("opacity-50");
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (
-    e: React.DragEvent,
-    dropArea: "fantasy" | "available"
-  ) => {
-    e.preventDefault();
-    const data = e.dataTransfer.getData("player");
-
-    if (!data) return;
-
-    const player = JSON.parse(data) as Player & { fromFantasyTeam: boolean };
-
-    if (dropArea === "fantasy" && !player.fromFantasyTeam) {
-      // Add to fantasy team if not already in and we have room
-      if (
-        !fantasyTeam.some((p) => p.name === player.name) &&
-        fantasyTeam.length < 11
-      ) {
-        onFantasyTeamChange([...fantasyTeam, player]);
-      }
-    } else if (dropArea === "available" && player.fromFantasyTeam) {
-      // Remove from fantasy team
-      handleRemove(player.name);
     }
   };
 
@@ -419,8 +386,8 @@ function EnhancedPlayerCard({
       onDragEnd={onDragEnd}
       onClick={onClick}
       className={`relative group flex items-center p-2 sm:p-3 rounded-lg border ${isAvailable
-          ? "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
-          : "border-gray-200 dark:border-gray-700"
+        ? "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
+        : "border-gray-200 dark:border-gray-700"
         } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${onClick ? "cursor-pointer" : ""
         } ${isAvailable ? "hover:shadow-md" : ""}`}
     >
@@ -483,8 +450,8 @@ function EnhancedPlayerCard({
                     onCaptainSelect(player.name);
                   }}
                   className={`flex items-center justify-center h-5 w-5 rounded-full ${player.isCaptain
-                      ? "bg-yellow-400 text-yellow-800"
-                      : "bg-gray-100 hover:bg-yellow-100 text-gray-600 hover:text-yellow-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
+                    ? "bg-yellow-400 text-yellow-800"
+                    : "bg-gray-100 hover:bg-yellow-100 text-gray-600 hover:text-yellow-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
                     }`}
                 >
                   <span className="text-[8px] font-bold">C</span>
@@ -509,8 +476,8 @@ function EnhancedPlayerCard({
                     onViceCaptainSelect(player.name);
                   }}
                   className={`flex items-center justify-center h-5 w-5 rounded-full ${player.isViceCaptain
-                      ? "bg-gray-400 text-gray-800"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+                    ? "bg-gray-400 text-gray-800"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
                     }`}
                 >
                   <span className="text-[8px] font-bold">VC</span>
