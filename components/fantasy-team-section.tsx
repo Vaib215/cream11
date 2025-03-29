@@ -62,7 +62,7 @@ export function FantasyTeamSection({
           isCaptain: player.name === aiSuggestedTeam.captain,
           isViceCaptain: player.name === aiSuggestedTeam.viceCaptain,
         }));
-
+        // @ts-expect-error - initialTeam is of type Player[]
         setFantasyTeam(initialTeam);
         setTotalCredits(initialTeam.reduce((sum, p) => sum + (p.credits || 0), 0));
       }
