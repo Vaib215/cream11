@@ -1,4 +1,4 @@
-# Cream 11 - Fantasy Cricket Team Predictor
+# Cream 11 - AI Fantasy Cricket Team Predictor
 
 Cream 11 is an advanced fantasy cricket team builder application that allows users to create their ultimate cricket XI from today's matches. With beautiful UI and powerful team analysis, Cream 11 helps cricket enthusiasts craft winning fantasy teams.
 
