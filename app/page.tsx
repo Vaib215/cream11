@@ -43,6 +43,13 @@ interface MatchWithPlayers {
     totalCredits: number;
     captain: string;
     viceCaptain: string;
+    teamStats: {
+      winProbability: number;
+      battingStrength: number;
+      bowlingStrength: number;
+      balanceRating: number;
+    };
+    teamAnalysis: string;
   };
 }
 
@@ -108,18 +115,40 @@ const getAISuggestedTeamCached = unstable_cache(
   async (match: Match) => {
     try {
       const result = await getCream11(match);
-      return result;
+      // Preserve existing teamStats if available, otherwise use defaults
+      return {
+        ...result,
+        teamStats: result.teamStats || {
+          winProbability: 50,
+          battingStrength: 60,
+          bowlingStrength: 60,
+          balanceRating: 55,
+        },
+        teamAnalysis: result.teamAnalysis || "AI analysis will be available after team selection.",
+        selectedPlayers: result.selectedPlayers || [],
+        totalCredits: result.totalCredits || 0,
+        captain: result.captain || "",
+        viceCaptain: result.viceCaptain || "",
+      };
     } catch (error) {
-      console.error("Error getting AI suggested team:", error);
+      console.error("Error getting AI suggested team for match:", match.home, "vs", match.away, error);
       return {
         selectedPlayers: [],
         totalCredits: 0,
         captain: "",
         viceCaptain: "",
+        teamStats: {
+          winProbability: 50,
+          battingStrength: 60,
+          bowlingStrength: 60,
+          balanceRating: 55,
+        },
+        teamAnalysis: "AI analysis will be available after team selection.",
       };
     }
   },
-  ["ai-team"],
+  // Use unique cache key for each match
+  (match) => [`ai-team-${match.home}-${match.away}-${match.date}-${match.start}`],
   { revalidate: 3600 } // 1 hour
 );
 

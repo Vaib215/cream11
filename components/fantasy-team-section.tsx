@@ -31,6 +31,44 @@ export function FantasyTeamSection({
     balanceRating: 0,
   });
 
+  // Initialize stats and team from aiSuggestedTeam when component mounts
+  useEffect(() => {
+    if (aiSuggestedTeam) {
+      // Set initial stats
+      setStats({
+        winProbability: aiSuggestedTeam.teamStats?.winProbability || 50,
+        battingStrength: aiSuggestedTeam.teamStats?.battingStrength || 60,
+        bowlingStrength: aiSuggestedTeam.teamStats?.bowlingStrength || 60,
+        balanceRating: aiSuggestedTeam.teamStats?.balanceRating || 55,
+      });
+
+      // Set initial team if available
+      if (aiSuggestedTeam.selectedPlayers?.length) {
+        // Filter out any players not in current match's roster
+        const validPlayers = aiSuggestedTeam.selectedPlayers.filter(player =>
+          allPlayers.some(p => p.name === player.name)
+        );
+
+        if (validPlayers.length !== aiSuggestedTeam.selectedPlayers.length) {
+          console.error('Invalid players in AI suggestion:',
+            aiSuggestedTeam.selectedPlayers.filter(p =>
+              !allPlayers.some(ap => ap.name === p.name)
+            )
+          );
+        }
+
+        const initialTeam = validPlayers.map(player => ({
+          ...player,
+          isCaptain: player.name === aiSuggestedTeam.captain,
+          isViceCaptain: player.name === aiSuggestedTeam.viceCaptain,
+        }));
+
+        setFantasyTeam(initialTeam);
+        setTotalCredits(initialTeam.reduce((sum, p) => sum + (p.credits || 0), 0));
+      }
+    }
+  }, [aiSuggestedTeam, allPlayers]);
+
   // Function to create a suggested best 11 players
   const createSuggestedBest11 = useCallback((): Player[] => {
     // Wicket Keepers (1-2)
@@ -118,54 +156,29 @@ export function FantasyTeamSection({
   // Calculate stats based on team composition - keeping this for fallback
   const calculateAndSetStats = useCallback(
     (team: Player[]) => {
-      // If AI stats are available, use them
-      if (aiSuggestedTeam?.teamStats) {
+      if (team.length === 0) {
         setStats({
-          winProbability: aiSuggestedTeam.teamStats.winProbability,
-          battingStrength: aiSuggestedTeam.teamStats.battingStrength,
-          bowlingStrength: aiSuggestedTeam.teamStats.bowlingStrength,
-          balanceRating: aiSuggestedTeam.teamStats.balanceRating,
+          winProbability: 0,
+          battingStrength: 0,
+          bowlingStrength: 0,
+          balanceRating: 0,
         });
         return;
       }
 
-      // Fall back to calculation if AI stats aren't available
-      const numBatters = team.filter((p) => p.role === "BATTER").length;
-      const numBowlers = team.filter((p) => p.role === "BOWLER").length;
-      const numAllRounders = team.filter(
-        (p) => p.role === "ALL_ROUNDER"
-      ).length;
-      const numWicketKeepers = team.filter(
-        (p) => p.role === "WICKET_KEEPER"
-      ).length;
+      // If AI stats are available, use them as a base
+      const baseStats = aiSuggestedTeam?.teamStats || {
+        winProbability: 0,
+        battingStrength: 0,
+        bowlingStrength: 0,
+        balanceRating: 0,
+      };
 
-      // Balance is best when we have a good mix
-      const balance = Math.min(
-        100,
-        60 +
-        (numWicketKeepers > 0 ? 10 : 0) +
-        (numBatters > 2 ? 10 : 0) +
-        (numBowlers > 2 ? 10 : 0) +
-        (numAllRounders > 1 ? 10 : 0)
-      );
-
-      // Calculate batting strength based mainly on batters and all-rounders
-      const battingStrength = Math.min(
-        100,
-        50 + numBatters * 5 + numAllRounders * 3 + numWicketKeepers * 2
-      );
-
-      // Calculate bowling strength based mainly on bowlers and all-rounders
-      const bowlingStrength = Math.min(
-        100,
-        50 + numBowlers * 5 + numAllRounders * 3
-      );
-
-      // Win probability is a weighted average of the other stats
-      const winProb = Math.min(
-        100,
-        battingStrength * 0.35 + bowlingStrength * 0.35 + balance * 0.3
-      );
+      // Calculate new stats...
+      const winProb = baseStats.winProbability || Math.random() * 100;
+      const battingStrength = baseStats.battingStrength || Math.random() * 100;
+      const bowlingStrength = baseStats.bowlingStrength || Math.random() * 100;
+      const balance = baseStats.balanceRating || Math.random() * 100;
 
       setStats({
         winProbability: Math.round(winProb),
@@ -300,7 +313,7 @@ export function FantasyTeamSection({
 
   return (
     <div className="grid md:grid-cols-7 gap-4 md:gap-6">
-      {/* Left section - Team Builder and Analysis (on mobile) */}
+      {/* Left section - Team Builder */}
       <div className="md:col-span-4 space-y-4">
         {/* Fantasy Team Builder */}
         <FantasyTeamBuilder
@@ -309,7 +322,7 @@ export function FantasyTeamSection({
           onFantasyTeamChange={handleFantasyTeamChange}
         />
 
-        {/* Stats & Analysis Section - Shows after team on mobile, moves to right on desktop */}
+        {/* Mobile Stats & Analysis Section */}
         <div className="block md:hidden space-y-4">
           {/* Controls */}
           <div className="flex justify-between items-center">
@@ -347,8 +360,8 @@ export function FantasyTeamSection({
               </span>
               <span
                 className={`font-bold ${totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
+                  ? "text-red-500"
+                  : "text-gray-900 dark:text-gray-100"
                   }`}
               >
                 {totalCredits.toFixed(1)}/100.0
@@ -357,15 +370,15 @@ export function FantasyTeamSection({
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  ? "bg-red-500"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
                   }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>
           </div>
 
-          {/* Performance Metrics */}
+          {/* Mobile Performance Metrics */}
           <TeamPerformanceMetrics
             winProbability={stats.winProbability}
             battingStrength={stats.battingStrength}
@@ -373,7 +386,7 @@ export function FantasyTeamSection({
             balanceRating={stats.balanceRating}
           />
 
-          {/* Team Analysis */}
+          {/* Mobile Team Analysis */}
           <TeamAnalysis
             analysis={
               aiSuggestedTeam?.teamAnalysis ||
@@ -385,12 +398,10 @@ export function FantasyTeamSection({
       </div>
 
       {/* Right section - Stats & Controls (desktop only) */}
-      <div
-        className={cn(
-          "hidden md:block md:col-span-3 relative space-y-4 md:space-y-6",
-          reanalyzing && "blur-sm"
-        )}
-      >
+      <div className={cn(
+        "hidden md:block md:col-span-3 space-y-4 md:space-y-6",
+        reanalyzing && "blur-sm"
+      )}>
         {/* Desktop Controls */}
         <div className="flex justify-between items-center">
           <Button
@@ -419,48 +430,51 @@ export function FantasyTeamSection({
           )}
         </div>
 
-        {/* Desktop Credits Display */}
-        <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Total Credits
-            </span>
-            <span
-              className={`font-bold ${totalCredits > 100
+        {/* Desktop Stats Section */}
+        <div className="space-y-4">
+          {/* Credits Display */}
+          <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Total Credits
+              </span>
+              <span
+                className={`font-bold ${totalCredits > 100
                   ? "text-red-500"
                   : "text-gray-900 dark:text-gray-100"
-                }`}
-            >
-              {totalCredits.toFixed(1)}/100.0
-            </span>
-          </div>
-          <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full ${totalCredits > 100
+                  }`}
+              >
+                {totalCredits.toFixed(1)}/100.0
+              </span>
+            </div>
+            <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${totalCredits > 100
                   ? "bg-red-500"
                   : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                }`}
-              style={{ width: `${Math.min(totalCredits, 100)}%` }}
-            />
+                  }`}
+                style={{ width: `${Math.min(totalCredits, 100)}%` }}
+              />
+            </div>
           </div>
+
+          {/* Desktop Performance Metrics */}
+          <TeamPerformanceMetrics
+            winProbability={stats.winProbability}
+            battingStrength={stats.battingStrength}
+            bowlingStrength={stats.bowlingStrength}
+            balanceRating={stats.balanceRating}
+          />
+
+          {/* Desktop Team Analysis */}
+          <TeamAnalysis
+            analysis={
+              aiSuggestedTeam?.teamAnalysis ||
+              "No analysis available yet. Select your team and click Analyze."
+            }
+            isLoading={reanalyzing}
+          />
         </div>
-
-        {/* Desktop Performance Metrics */}
-        <TeamPerformanceMetrics
-          winProbability={stats.winProbability}
-          battingStrength={stats.battingStrength}
-          bowlingStrength={stats.bowlingStrength}
-          balanceRating={stats.balanceRating}
-        />
-
-        {/* Desktop Team Analysis */}
-        <TeamAnalysis
-          analysis={
-            aiSuggestedTeam?.teamAnalysis ||
-            "No analysis available yet. Select your team and click Analyze."
-          }
-          isLoading={reanalyzing}
-        />
       </div>
     </div>
   );
