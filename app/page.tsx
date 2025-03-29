@@ -124,14 +124,22 @@ const getAISuggestedTeamCached = unstable_cache(
           bowlingStrength: 60,
           balanceRating: 55,
         },
-        teamAnalysis: result.teamAnalysis || "AI analysis will be available after team selection.",
+        teamAnalysis:
+          result.teamAnalysis ||
+          "AI analysis will be available after team selection.",
         selectedPlayers: result.selectedPlayers || [],
         totalCredits: result.totalCredits || 0,
         captain: result.captain || "",
         viceCaptain: result.viceCaptain || "",
       };
     } catch (error) {
-      console.error("Error getting AI suggested team for match:", match.home, "vs", match.away, error);
+      console.error(
+        "Error getting AI suggested team for match:",
+        match.home,
+        "vs",
+        match.away,
+        error
+      );
       return {
         selectedPlayers: [],
         totalCredits: 0,
@@ -148,23 +156,26 @@ const getAISuggestedTeamCached = unstable_cache(
     }
   },
   // Use unique cache key for each match
-  (match) => [`ai-team-${match.home}-${match.away}-${match.date}-${match.start}`],
+  [`ai-team`],
   { revalidate: 3600 } // 1 hour
 );
 
 export default async function Home() {
-  console.log('Server time:', new Date().toISOString());
-  console.log('Kolkata time:', dayjs().tz("Asia/Kolkata").format());
-
   const todaysMatches = matchesSchedule.matches.filter((match) => {
-    const matchDate = dayjs.tz(`${match.date} ${match.start}`, "DD-MMM-YY h:mm A", "Asia/Kolkata");
+    const matchDate = dayjs.tz(
+      `${match.date} ${match.start}`,
+      "DD-MMM-YY h:mm A",
+      "Asia/Kolkata"
+    );
     const nowInKolkata = dayjs().tz("Asia/Kolkata");
 
-    console.log('Match date:', match.date, 'parsed as:', matchDate.format());
-    console.log('Is same day?', matchDate.isSame(nowInKolkata, "day"));
+    console.log("Match date:", match.date, "parsed as:", matchDate.format());
+    console.log("Is same day?", matchDate.isSame(nowInKolkata, "day"));
 
     return matchDate.isSame(nowInKolkata, "day");
   });
+  console.log("Server time:", new Date().toISOString());
+  console.log("Kolkata time:", dayjs().tz("Asia/Kolkata").format());
 
   const matchesWithPlayers: MatchWithPlayers[] = await Promise.all(
     todaysMatches.map(async (match) => {

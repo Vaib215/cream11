@@ -45,26 +45,51 @@ export function FantasyTeamSection({
       // Set initial team if available
       if (aiSuggestedTeam.selectedPlayers?.length) {
         // Filter out any players not in current match's roster
-        const validPlayers = aiSuggestedTeam.selectedPlayers.filter(player =>
-          allPlayers.some(p => p.name === player.name)
+        const validPlayers = aiSuggestedTeam.selectedPlayers.filter((player) =>
+          allPlayers.some((p) => p.name === player.name)
         );
 
         if (validPlayers.length !== aiSuggestedTeam.selectedPlayers.length) {
-          console.error('Invalid players in AI suggestion:',
-            aiSuggestedTeam.selectedPlayers.filter(p =>
-              !allPlayers.some(ap => ap.name === p.name)
+          console.error(
+            "Invalid players in AI suggestion:",
+            aiSuggestedTeam.selectedPlayers.filter(
+              (p) => !allPlayers.some((ap) => ap.name === p.name)
             )
           );
         }
 
-        const initialTeam = validPlayers.map(player => ({
+        const initialTeam = validPlayers.map((player) => ({
           ...player,
           isCaptain: player.name === aiSuggestedTeam.captain,
           isViceCaptain: player.name === aiSuggestedTeam.viceCaptain,
         }));
 
-        setFantasyTeam(initialTeam);
-        setTotalCredits(initialTeam.reduce((sum, p) => sum + (p.credits || 0), 0));
+        // Convert initialTeam to Player[] type by ensuring all required properties exist
+        const completeTeam = initialTeam
+          .map((player) => {
+            // Find the matching player from allPlayers to get all properties
+            const fullPlayerData = allPlayers.find(
+              (p) => p.name === player.name
+            );
+
+            if (!fullPlayerData) {
+              console.error(`Player ${player.name} not found in allPlayers`);
+              return null;
+            }
+
+            // Merge the player data with captain/vice-captain status
+            return {
+              ...fullPlayerData,
+              isCaptain: player.isCaptain,
+              isViceCaptain: player.isViceCaptain,
+            };
+          })
+          .filter(Boolean) as Player[];
+
+        setFantasyTeam(completeTeam);
+        setTotalCredits(
+          completeTeam.reduce((sum, p) => sum + (p.credits || 0), 0)
+        );
       }
     }
   }, [aiSuggestedTeam, allPlayers]);
@@ -359,20 +384,22 @@ export function FantasyTeamSection({
                 Total Credits
               </span>
               <span
-                className={`font-bold ${totalCredits > 100
-                  ? "text-red-500"
-                  : "text-gray-900 dark:text-gray-100"
-                  }`}
+                className={`font-bold ${
+                  totalCredits > 100
+                    ? "text-red-500"
+                    : "text-gray-900 dark:text-gray-100"
+                }`}
               >
                 {totalCredits.toFixed(1)}/100.0
               </span>
             </div>
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${totalCredits > 100
-                  ? "bg-red-500"
-                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                  }`}
+                className={`h-full rounded-full ${
+                  totalCredits > 100
+                    ? "bg-red-500"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>
@@ -398,10 +425,12 @@ export function FantasyTeamSection({
       </div>
 
       {/* Right section - Stats & Controls (desktop only) */}
-      <div className={cn(
-        "hidden md:block md:col-span-3 space-y-4 md:space-y-6",
-        reanalyzing && "blur-sm"
-      )}>
+      <div
+        className={cn(
+          "hidden md:block md:col-span-3 space-y-4 md:space-y-6",
+          reanalyzing && "blur-sm"
+        )}
+      >
         {/* Desktop Controls */}
         <div className="flex justify-between items-center">
           <Button
@@ -439,20 +468,22 @@ export function FantasyTeamSection({
                 Total Credits
               </span>
               <span
-                className={`font-bold ${totalCredits > 100
-                  ? "text-red-500"
-                  : "text-gray-900 dark:text-gray-100"
-                  }`}
+                className={`font-bold ${
+                  totalCredits > 100
+                    ? "text-red-500"
+                    : "text-gray-900 dark:text-gray-100"
+                }`}
               >
                 {totalCredits.toFixed(1)}/100.0
               </span>
             </div>
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${totalCredits > 100
-                  ? "bg-red-500"
-                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                  }`}
+                className={`h-full rounded-full ${
+                  totalCredits > 100
+                    ? "bg-red-500"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>
