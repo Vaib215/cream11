@@ -19,7 +19,8 @@ jobs:
       - name: Add known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          # Note: Removed the -p parameter from ssh-keyscan as it doesn't support port specification
 
       - name: Deploy to VM
         run: |
