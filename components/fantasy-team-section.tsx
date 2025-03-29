@@ -361,8 +361,8 @@ export function FantasyTeamSection({
               </span>
               <span
                 className={`font-bold ${totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
+                  ? "text-red-500"
+                  : "text-gray-900 dark:text-gray-100"
                   }`}
               >
                 {totalCredits.toFixed(1)}/100.0
@@ -371,8 +371,8 @@ export function FantasyTeamSection({
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  ? "bg-red-500"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
                   }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
@@ -443,8 +443,8 @@ export function FantasyTeamSection({
               </span>
               <span
                 className={`font-bold ${totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
+                  ? "text-red-500"
+                  : "text-gray-900 dark:text-gray-100"
                   }`}
               >
                 {totalCredits.toFixed(1)}/100.0
@@ -453,8 +453,8 @@ export function FantasyTeamSection({
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full ${totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  ? "bg-red-500"
+                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
                   }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />

@@ -127,6 +127,9 @@ const getAISuggestedTeamCached = unstable_cache(
         teamAnalysis:
           result.teamAnalysis ||
           "AI analysis will be available after team selection.",
+        teamAnalysis:
+          result.teamAnalysis ||
+          "AI analysis will be available after team selection.",
         selectedPlayers: result.selectedPlayers || [],
         totalCredits: result.totalCredits || 0,
         captain: result.captain || "",
