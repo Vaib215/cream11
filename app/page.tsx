@@ -8,6 +8,7 @@ import { getPlaying11OfTeams, getCream11 } from "@/lib/gemini";
 import { unstable_cache } from "next/cache";
 import { PlayerDetails } from "@/types/player";
 import { getPlayersCredits } from "@/lib/my11circle";
+import { MessagesSquareIcon } from "lucide-react";
 
 // Configure dayjs to use timezone
 dayjs.extend(utc);
@@ -158,7 +159,9 @@ const getAISuggestedTeamCached = unstable_cache(
   // Use unique cache key for each match
   // @ts-nocheck
   // @ts-expect-error - match is of type Match
-  (match: any) => [`ai-team-${match.home}-${match.away}-${match.date}-${match.start}`],
+  (match: any) => [
+    `ai-team-${match.home}-${match.away}-${match.date}-${match.start}`,
+  ],
   { revalidate: 3600 } // 1 hour
 );
 
@@ -232,7 +235,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-indigo-950">
-      <header className="bg-gradient-to-r from-indigo-700 to-purple-700 shadow-md">
+      <header className="sticky top-0 z-50 bg-gradient-to-r from-indigo-700 to-purple-700 shadow-md">
         <div className="container mx-auto px-4 py-3 md:py-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-0">
             <h1 className="text-xl md:text-3xl font-bold text-white flex items-center">
@@ -295,7 +298,7 @@ export default async function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-800 dark:bg-gray-900 text-white mt-auto">
+      <footer className="bg-gray-800 relative z-40 dark:bg-gray-900 text-white mt-auto">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-300">
@@ -309,6 +312,17 @@ export default async function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Feedback Button */}
+      <div className="fixed bottom-2 right-2 md:bottom-4 md:right-4">
+        <button
+          name="feedback-button"
+          className="bg-indigo-600 cursor-pointer relative z-20 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300"
+        >
+          <MessagesSquareIcon className="inline mr-2 w-4 h-4" />
+          Give Feedback
+        </button>
+      </div>
     </main>
   );
 }
