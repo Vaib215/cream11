@@ -172,7 +172,9 @@ export default async function Home() {
       "DD-MMM-YY h:mm A",
       "Asia/Kolkata"
     );
+    console.log("Match date:", match.date, "parsed as:", matchDate.format());
     const nowInKolkata = dayjs().tz("Asia/Kolkata");
+    console.log("Now in Kolkata:", nowInKolkata.format());
 
     console.log("Match date:", match.date, "parsed as:", matchDate.format());
     console.log("Is same day?", matchDate.isSame(nowInKolkata, "day"));
@@ -248,7 +250,7 @@ export default async function Home() {
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-indigo-600/30 text-indigo-200">
-                  IPL 2024
+                  IPL 2025
                 </span>
               </div>
             </div>
