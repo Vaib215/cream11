@@ -139,18 +139,10 @@
     {
       "date": "05-Apr-25",
       "start": "7:30 PM",
-      "venue": "Mohali",
+      "venue": "New Chandigarh",
       "home": "Punjab Kings",
       "away": "Rajasthan Royals",
       "gameday_id": 18
-    },
-    {
-      "date": "06-Apr-25",
-      "start": "3:30 PM",
-      "venue": "Kolkata",
-      "home": "Kolkata Knight Riders",
-      "away": "Lucknow Super Giants",
-      "gameday_id": 19
     },
     {
       "date": "06-Apr-25",
@@ -171,7 +163,7 @@
     {
       "date": "08-Apr-25",
       "start": "7:30 PM",
-      "venue": "Mohali",
+      "venue": "New Chandigarh",
       "home": "Punjab Kings",
       "away": "Chennai Super Kings",
       "gameday_id": 22
@@ -243,7 +235,7 @@
     {
       "date": "15-Apr-25",
       "start": "7:30 PM",
-      "venue": "Mohali",
+      "venue": "New Chandigarh",
       "home": "Punjab Kings",
       "away": "Kolkata Knight Riders",
       "gameday_id": 31
@@ -291,7 +283,7 @@
     {
       "date": "20-Apr-25",
       "start": "3:30 PM",
-      "venue": "Mohali",
+      "venue": "New Chandigarh",
       "home": "Punjab Kings",
       "away": "Royal Challengers Bengaluru",
       "gameday_id": 37

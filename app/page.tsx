@@ -54,64 +54,59 @@ interface MatchWithPlayers {
   };
 }
 
-const getPlayersDataCached = unstable_cache(
-  async (match: Match) => {
-    const playersData = await getPlaying11OfTeams(match);
-    const playersCredits = await getPlayersCredits(match);
+async function getPlayersData(match: Match) {
+  const playersData = await getPlaying11OfTeams(match);
+  const playersCredits = await getPlayersCredits(match);
 
-    // Add credits to players from API response
-    Object.keys(playersData).forEach((team) => {
-      playersData[team] = playersData[team].map((player) => ({
-        ...player,
+  // Add credits to players from API response
+  Object.keys(playersData).forEach((team) => {
+    playersData[team] = playersData[team].map((player) => ({
+      ...player,
+      credits:
+        playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
+    }));
+  });
+
+  const finalPlayersData = playersData;
+  if (
+    !playersData?.[match.home]?.length ||
+    !playersData?.[match.away]?.length
+  ) {
+    const homeTeam = (teamsData as any)[match.home];
+    const awayTeam = (teamsData as any)[match.away];
+
+    // Convert team data to playing 11 format if needed
+    if (homeTeam?.players?.length) {
+      finalPlayersData[match.home] = homeTeam.players.map((player: any) => ({
+        name: player.name,
+        role: player.role || ("BATTER" as const), // Default role
+        isCaptain: false,
+        isViceCaptain: false,
+        isImpactPlayer: false,
         credits:
           playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
       }));
-    });
-
-    const finalPlayersData = playersData;
-    if (
-      !playersData?.[match.home]?.length ||
-      !playersData?.[match.away]?.length
-    ) {
-      const homeTeam = (teamsData as any)[match.home];
-      const awayTeam = (teamsData as any)[match.away];
-
-      // Convert team data to playing 11 format if needed
-      if (homeTeam?.players?.length) {
-        finalPlayersData[match.home] = homeTeam.players.map((player: any) => ({
-          name: player.name,
-          role: player.role || ("BATTER" as const), // Default role
-          isCaptain: false,
-          isViceCaptain: false,
-          isImpactPlayer: false,
-          credits:
-            playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
-        }));
-      } else {
-        finalPlayersData[match.home] = [];
-      }
-
-      if (awayTeam?.players?.length) {
-        finalPlayersData[match.away] = awayTeam.players.map((player: any) => ({
-          name: player.name,
-          role: player.role || ("BATTER" as const), // Default role
-          isCaptain: false,
-          isViceCaptain: false,
-          isImpactPlayer: false,
-          credits:
-            playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
-        }));
-      } else {
-        finalPlayersData[match.away] = [];
-      }
+    } else {
+      finalPlayersData[match.home] = [];
     }
-    return finalPlayersData;
-  },
-  ["playing-11"],
-  { revalidate: 1800 } // 30 minutes
-);
 
-// Create a cache for the AI suggested team
+    if (awayTeam?.players?.length) {
+      finalPlayersData[match.away] = awayTeam.players.map((player: any) => ({
+        name: player.name,
+        role: player.role || ("BATTER" as const), // Default role
+        isCaptain: false,
+        isViceCaptain: false,
+        isImpactPlayer: false,
+        credits:
+          playersCredits.find((p) => p.name === player.name)?.credits || 9.0,
+      }));
+    } else {
+      finalPlayersData[match.away] = [];
+    }
+  }
+  return finalPlayersData;
+}
+
 const getAISuggestedTeamCached = unstable_cache(
   async (match: Match) => {
     try {
@@ -172,23 +167,16 @@ export default async function Home() {
       "DD-MMM-YY h:mm A",
       "Asia/Kolkata"
     );
-    console.log("Match date:", match.date, "parsed as:", matchDate.format());
     const nowInKolkata = dayjs().tz("Asia/Kolkata");
-    console.log("Now in Kolkata:", nowInKolkata.format());
-
-    console.log("Match date:", match.date, "parsed as:", matchDate.format());
-    console.log("Is same day?", matchDate.isSame(nowInKolkata, "day"));
-
     return matchDate.isSame(nowInKolkata, "day");
   });
-  console.log("Server time:", new Date().toISOString());
-  console.log("Kolkata time:", dayjs().tz("Asia/Kolkata").format());
 
   const matchesWithPlayers: MatchWithPlayers[] = await Promise.all(
     todaysMatches.map(async (match) => {
-      const playersData = await getPlayersDataCached(match);
+      // Using non-cached function for player data
+      const playersData = await getPlayersData(match);
 
-      // Get AI suggested team for this match server-side
+      // Get AI suggested team for this match server-side (still using cache)
       const aiSuggestedTeam = await getAISuggestedTeamCached(match);
 
       return {
