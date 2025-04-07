@@ -369,7 +369,9 @@ export function FantasyTeamBuilder({
                 key={player.name}
                 player={player}
                 isAvailable={true}
+                //@ts-expect-error - This is a workaround to prevent the drag and drop from working on mobile devices
                 onDragStart={('ontouchstart' in window) ? undefined : (e) => handleDragStart(e, player)}
+                //@ts-expect-error - This is a workaround to prevent the drag and drop from working on mobile devices
                 onDragEnd={('ontouchstart' in window) ? undefined : handleDragEnd}
                 onClick={() => handleSelect(player)}
               />
