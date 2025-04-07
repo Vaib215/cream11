@@ -99,7 +99,7 @@ export const getCream11 = unstable_cache(
         const validPlayerNames = playersWithCredits.map(p => p.name);
 
         const model = genAI.getGenerativeModel({
-          model: "models/gemini-2.5-pro-latest",
+          model: "models/gemini-1.5-pro-latest",
           systemInstruction: `You are an expert fantasy cricket analyst. Your task is to create the optimal fantasy team using ONLY players from ${match.home} and ${match.away}.
           
           STRICT RULES:
