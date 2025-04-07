@@ -5,25 +5,7 @@ import { useState, useEffect } from "react";
 
 export function HowToUseGuide() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Check if device is mobile
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    // Initial check
-    checkIfMobile();
-
-    // Add event listener for window resize
-    window.addEventListener("resize", checkIfMobile);
-
-    // Cleanup
-    return () => window.removeEventListener("resize", checkIfMobile);
-  }, []);
-
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
