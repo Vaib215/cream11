@@ -266,12 +266,18 @@ export function FantasyTeamBuilder({
                   role="combobox"
                   aria-expanded={open}
                   className="w-full justify-between text-xs sm:text-sm"
+                  onTouchStart={() => setOpen(true)}
                 >
                   Add Player
                   <ChevronsUpDown className="ml-2 h-3 w-3 sm:h-4 sm:w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
+              <PopoverContent
+                className="w-full p-0"
+                side="bottom"
+                align="center"
+                style={{ maxHeight: '50vh', overflow: 'auto' }}
+              >
                 <Command className="border border-purple-100 dark:border-purple-900">
                   <CommandInput
                     placeholder="Search player..."
@@ -338,8 +344,8 @@ export function FantasyTeamBuilder({
                 key={player.name}
                 player={player}
                 isAvailable={true}
-                onDragStart={(e) => handleDragStart(e, player)}
-                onDragEnd={handleDragEnd}
+                onDragStart={('ontouchstart' in window) ? undefined : (e) => handleDragStart(e, player)}
+                onDragEnd={('ontouchstart' in window) ? undefined : handleDragEnd}
                 onClick={() => handleSelect(player)}
               />
             ))}
@@ -379,17 +385,22 @@ function EnhancedPlayerCard({
   onCaptainSelect,
   onViceCaptainSelect,
 }: EnhancedPlayerCardProps) {
+  const [isPressed, setIsPressed] = useState(false);
+
   return (
     <div
-      draggable
+      draggable={!('ontouchstart' in window)}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
+      onTouchStart={() => setIsPressed(true)}
+      onTouchEnd={() => setIsPressed(false)}
       className={`relative group flex items-center p-2 sm:p-3 rounded-lg border ${isAvailable
         ? "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
         : "border-gray-200 dark:border-gray-700"
-        } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${onClick ? "cursor-pointer" : ""
-        } ${isAvailable ? "hover:shadow-md" : ""}`}
+        } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${onClick ? "cursor-pointer active:scale-95" : ""
+        } ${isPressed ? "scale-95" : ""} ${isAvailable ? "hover:shadow-md" : ""
+        }`}
     >
       {/* Player Image */}
       <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
@@ -495,16 +506,16 @@ function EnhancedPlayerCard({
         </div>
       )}
 
-      {/* Remove Button */}
+      {/* Modified remove button for mobile visibility */}
       {onRemove && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute -top-1.5 -right-1.5 hidden group-hover:flex items-center justify-center h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900"
+          className="absolute -top-1.5 -right-1.5 flex md:hidden group-hover:flex items-center justify-center h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900"
         >
-          <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-600 dark:text-red-400" />
+          <X className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 dark:text-red-400" />
         </button>
       )}
     </div>
