@@ -11,7 +11,7 @@ import { getPlayersCredits } from "@/lib/my11circle";
 import { FeedbackModal } from "@/components/feedback-modal";
 import { HowToUseGuide } from "@/components/how-to-use-guide";
 
-const revalidate = 3600 * 3; // 3 hours
+export const revalidate = 3600 * 3; // 3 hours
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
