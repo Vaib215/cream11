@@ -13,10 +13,7 @@ const API_KEYS = process.env.GEMINI_API_KEYS?.split(',') || [process.env.GEMINI_
 let currentKeyIndex = 0;
 let rateLimitResetTime = 0;
 
-function getNextKey() {
-  currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-  return new GoogleGenerativeAI(API_KEYS[currentKeyIndex]);
-}
+
 
 function isRateLimited(error: unknown) {
   return error instanceof GoogleGenerativeAIError &&
@@ -302,147 +299,149 @@ interface ExtendedSelectedPlayer extends SelectedPlayer {
   team: string;
 }
 
-export async function getCustomTeamAnalysis(
-  match: Match,
-  selectedPlayers: ExtendedSelectedPlayer[],
-  aiSuggestedTeam: Player[]
-) {
-  // Add caching like this:
-  // export const getCustomTeamAnalysis = unstable_cache(
-  //  async (match, selectedPlayers, aiSuggestedTeam) => {...},
-  //  ['custom-analysis'], 
-  //  { revalidate: 3600 }
-  // );
+export const getCustomTeamAnalysis = unstable_cache(
+  async (match: Match, selectedPlayers: ExtendedSelectedPlayer[], aiSuggestedTeam: Player[]) => {
+    return withKeyRotation(async () => {
+      try {
+        // First get all players from both teams
+        const allPlayers = await getPlaying11OfTeams(match);
+        const playersCredits = await getPlayersCredits(match);
+        const allPlayersWithHistory = Object.entries(
+          allPlayers as Record<string, PlayerDetails[]>
+        ).flatMap(([team, players]) =>
+          players.map((player: PlayerDetails) => ({
+            ...player,
+            team,
+            history: historicalData[player.name as keyof typeof historicalData],
+          }))
+        );
 
-  try {
-    // First get all players from both teams
-    const allPlayers = await getPlaying11OfTeams(match);
-    const playersCredits = await getPlayersCredits(match);
-    const allPlayersWithHistory = Object.entries(
-      allPlayers as Record<string, PlayerDetails[]>
-    ).flatMap(([team, players]) =>
-      players.map((player: PlayerDetails) => ({
-        ...player,
-        team,
-        history: historicalData[player.name as keyof typeof historicalData],
-      }))
-    );
+        const model = new GoogleGenerativeAI(API_KEYS[currentKeyIndex]).getGenerativeModel({
+          model: "models/gemini-2.0-flash",
+          systemInstruction: `You are an expert fantasy cricket analyst. Your task is to analyze a given team based on comprehensive historical data of all available players.
 
-    const model = getNextKey().getGenerativeModel({
-      model: "models/gemini-2.0-flash",
-      systemInstruction: `You are an expert in fantasy cricket analyst. Your task is to analyze a given team based on comprehensive historical data of all available players.
+          CRITICAL INSTRUCTIONS:
+          1. The AI's suggested team is always the optimal team with the highest possible win probability.
+          2. Any modifications to the AI team will result in lower performance metrics.
+          3. Modified teams should have win probabilities 5-10% lower than the AI team.
+          4. All statistics must be realistic and based on historical data.
+          5. Provide detailed justification for all statistical changes.
+          6. Never suggest that a modified team could perform better than the AI's optimal selection.
+          7. Consider the complete player pool when evaluating selected players.
+          8. Compare each selected player against all available alternatives.
+          9. Factor in team composition and role balance.
+          10. Use exact statistical values from historical data.
+          
+          ${fantasyCricketRules}`,
+        });
 
-      CRITICAL INSTRUCTIONS:
-      1. The AI's suggested team is always the optimal team with the highest possible win probability.
-      2. Any modifications to the AI team will result in lower performance metrics.
-      3. Modified teams should have win probabilities 5-10% lower than the AI team.
-      4. All statistics must be realistic and based on historical data.
-      5. Provide detailed justification for all statistical changes.
-      6. Never suggest that a modified team could perform better than the AI's optimal selection.
-      7. Consider the complete player pool when evaluating selected players.
-      8. Compare each selected player against all available alternatives.
-      9. Factor in team composition and role balance.
-      10. Use exact statistical values from historical data.
-      
-      ${fantasyCricketRules}`,
-    });
-
-    const { response } = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
+        const { response } = await model.generateContent({
+          contents: [
             {
-              text: `
-              Analyze this fantasy cricket team for ${match.home} vs ${match.away
-                }.
-              
-              COMPLETE HISTORICAL DATA OF ALL PLAYERS:
-              ${JSON.stringify(allPlayersWithHistory, null, 2)}
+              role: "user",
+              parts: [
+                {
+                  text: `
+                  Analyze this fantasy cricket team for ${match.home} vs ${match.away
+                    }.
+                    
+                    COMPLETE HISTORICAL DATA OF ALL PLAYERS:
+                    ${JSON.stringify(allPlayersWithHistory, null, 2)}
 
-              AVAILABLE PLAYERS WITH CREDITS:
-              ${JSON.stringify(
-                  Object.entries(allPlayers).flatMap(([team, players]) =>
-                    players.map((player) => ({
-                      ...player,
-                      team,
-                      credits:
-                        playersCredits.find((p) => p.name === player.name)
-                          ?.credits || 8,
-                    }))
-                  ),
-                  null,
-                  2
-                )}
-              
-              SELECTED TEAM TO ANALYZE:
-              ${JSON.stringify(selectedPlayers, null, 2)}
-              
-              AI'S SUGGESTED TEAM (THE OPTIMAL TEAM):
-              ${JSON.stringify(aiSuggestedTeam, null, 2)}
+                    AVAILABLE PLAYERS WITH CREDITS:
+                    ${JSON.stringify(
+                      Object.entries(allPlayers).flatMap(([team, players]) =>
+                        players.map((player) => ({
+                          ...player,
+                          team,
+                          credits:
+                            playersCredits.find((p) => p.name === player.name)
+                              ?.credits || 8,
+                        }))
+                      ),
+                      null,
+                      2
+                    )}
+                    
+                    SELECTED TEAM TO ANALYZE:
+                    ${JSON.stringify(selectedPlayers, null, 2)}
+                    
+                    AI'S SUGGESTED TEAM (THE OPTIMAL TEAM):
+                    ${JSON.stringify(aiSuggestedTeam, null, 2)}
 
-              IMPORTANT ANALYSIS REQUIREMENTS:
-              1. Compare selected players with ALL available players in their roles
-              2. Calculate realistic win probability (must be lower than AI team if modified)
-              3. Evaluate batting strength, bowling strength, and team balance
-              4. Provide detailed player-by-player analysis with exact statistics
-              5. Explain all statistical adjustments with specific reasons
-              6. Compare each selection against available alternatives
-              7. Consider team composition impact on overall performance
-              
-              Respond with a JSON object containing:
-              {
-                "selectedPlayers": Array of selected players with all details,
-                "totalCredits": Total credits used,
-                "captain": Captain name,
-                "viceCaptain": Vice-captain name,
-                "teamAnalysis": Detailed analysis explaining all statistics and comparisons,
-                "teamStats": {
-                  "winProbability": number (0-100),
-                  "battingStrength": number (0-100),
-                  "bowlingStrength": number (0-100),
-                  "balanceRating": number (0-100)
+                    IMPORTANT ANALYSIS REQUIREMENTS:
+                    1. Compare selected players with ALL available players in their roles
+                    2. Calculate realistic win probability (must be lower than AI team if modified)
+                    3. Evaluate batting strength, bowling strength, and team balance
+                    4. Provide detailed player-by-player analysis with exact statistics
+                    5. Explain all statistical adjustments with specific reasons
+                    6. Compare each selection against available alternatives
+                    7. Consider team composition impact on overall performance
+                    
+                    Respond with a JSON object containing:
+                    {
+                      "selectedPlayers": Array of selected players with all details,
+                      "totalCredits": Total credits used,
+                      "captain": Captain name,
+                      "viceCaptain": Vice-captain name,
+                      "teamAnalysis": Detailed analysis explaining all statistics and comparisons,
+                      "teamStats": {
+                        "winProbability": number (0-100),
+                        "battingStrength": number (0-100),
+                        "bowlingStrength": number (0-100),
+                        "balanceRating": number (0-100)
+                      },
+                      "comparisonWithOptimal": {
+                        "probabilityDelta": Difference from AI team,
+                        "keyDifferences": Array of main differences,
+                        "riskFactors": Array of potential risks,
+                        "missedOpportunities": Array of better alternatives not selected
+                      }
+                    }
+                    `,
                 },
-                "comparisonWithOptimal": {
-                  "probabilityDelta": Difference from AI team,
-                  "keyDifferences": Array of main differences,
-                  "riskFactors": Array of potential risks,
-                  "missedOpportunities": Array of better alternatives not selected
-                }
-              }
-              `,
+              ],
             },
           ],
-        },
-      ],
-    });
+        });
 
-    // Parse and return the AI's analysis
-    try {
-      const responseText = response.text();
-      const jsonMatch =
-        responseText.match(/```json\n([\s\S]*?)\n```/) ||
-        responseText.match(/{[\s\S]*?}/);
+        // Parse and return the AI's analysis
+        try {
+          const responseText = response.text();
+          const jsonMatch =
+            responseText.match(/```json\n([\s\S]*?)\n```/) ||
+            responseText.match(/{[\s\S]*?}/);
 
-      if (!jsonMatch) {
-        console.error("Failed JSON extraction. Raw response:", responseText);
-        throw new Error("Could not extract JSON from response");
+          if (!jsonMatch) {
+            console.error("Failed JSON extraction. Raw response:", responseText);
+            throw new Error("Could not extract JSON from response");
+          }
+
+          const jsonStr = jsonMatch[0].startsWith("{")
+            ? jsonMatch[0]
+            : jsonMatch[1];
+
+          // Add additional JSON cleanup
+          const cleanedJson = jsonStr
+            .replace(/\\/g, '')
+            .replace(/(\w+):/g, '"$1":')
+            .replace(/'/g, '"');
+
+          return JSON.parse(cleanedJson);
+        } catch (error) {
+          // @ts-expect-error - error is not defined
+          console.error("Failed to parse AI response:", { error, responseText });
+          throw new Error("Failed to analyze team. Please check your selections.");
+        }
+      } catch (err) {
+        console.error("Error in getCustomTeamAnalysis:", err);
+        throw new Error("Failed to generate team analysis. Please try again later.");
       }
-
-      const jsonStr = jsonMatch[0].startsWith("{")
-        ? jsonMatch[0]
-        : jsonMatch[1];
-      return JSON.parse(jsonStr);
-    } catch (error) {
-      // @ts-expect-error - responseText is not defined
-      console.error("Failed to parse AI response:", { error, responseText });
-      throw new Error("Failed to analyze team. Please check your selections.");
-    }
-  } catch (err) {
-    console.error("Error in getCustomTeamAnalysis:", err);
-    throw err;
-  }
-}
+    });
+  },
+  ['custom-team-analysis'],
+  { revalidate: 3600, tags: ['team-analysis-cache'] }
+);
 
 export async function getPlaying11OfTeams(match: Match) {
   return withKeyRotation(async (genAI) => {
