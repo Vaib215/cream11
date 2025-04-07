@@ -31,20 +31,16 @@ export function FantasyTeamSection({
     balanceRating: 0,
   });
 
-  // Initialize stats and team from aiSuggestedTeam when component mounts
   useEffect(() => {
     if (aiSuggestedTeam) {
-      // Set initial stats
       setStats({
-        winProbability: aiSuggestedTeam.teamStats?.winProbability || 50,
-        battingStrength: aiSuggestedTeam.teamStats?.battingStrength || 60,
-        bowlingStrength: aiSuggestedTeam.teamStats?.bowlingStrength || 60,
-        balanceRating: aiSuggestedTeam.teamStats?.balanceRating || 55,
+        winProbability: aiSuggestedTeam.teamStats?.winProbability || 0,
+        battingStrength: aiSuggestedTeam.teamStats?.battingStrength || 0,
+        bowlingStrength: aiSuggestedTeam.teamStats?.bowlingStrength || 0,
+        balanceRating: aiSuggestedTeam.teamStats?.balanceRating || 0,
       });
 
-      // Set initial team if available
       if (aiSuggestedTeam.selectedPlayers?.length) {
-        // Filter out any players not in current match's roster
         const validPlayers = aiSuggestedTeam.selectedPlayers.filter((player) =>
           allPlayers.some((p) => p.name === player.name)
         );
@@ -58,14 +54,28 @@ export function FantasyTeamSection({
           );
         }
 
-        const initialTeam = validPlayers.map((player) => ({
-          ...player,
-          isCaptain: player.name === aiSuggestedTeam.captain,
-          isViceCaptain: player.name === aiSuggestedTeam.viceCaptain,
-        }));
-        // @ts-expect-error - initialTeam is of type Player[]
+        const initialTeam = validPlayers
+          .map((player) => {
+            const fullPlayerDetails = allPlayers.find(
+              (p) => p.name === player.name
+            );
+            if (!fullPlayerDetails) {
+              return null;
+            }
+            return {
+              ...fullPlayerDetails,
+              isCaptain: player.name === aiSuggestedTeam.captain,
+              isViceCaptain: player.name === aiSuggestedTeam.viceCaptain,
+              isImpactPlayer: fullPlayerDetails.isImpactPlayer,
+              credits: player.credits || fullPlayerDetails.credits,
+            };
+          })
+          .filter(Boolean) as Player[];
+
         setFantasyTeam(initialTeam);
-        setTotalCredits(initialTeam.reduce((sum, p) => sum + (p.credits || 0), 0));
+        setTotalCredits(
+          initialTeam.reduce((sum, p) => sum + (p.credits || 0), 0)
+        );
       }
     }
   }, [aiSuggestedTeam, allPlayers]);
@@ -360,20 +370,22 @@ export function FantasyTeamSection({
                 Total Credits
               </span>
               <span
-                className={`font-bold ${totalCredits > 100
-                  ? "text-red-500"
-                  : "text-gray-900 dark:text-gray-100"
-                  }`}
+                className={`font-bold ${
+                  totalCredits > 100
+                    ? "text-red-500"
+                    : "text-gray-900 dark:text-gray-100"
+                }`}
               >
                 {totalCredits.toFixed(1)}/100.0
               </span>
             </div>
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${totalCredits > 100
-                  ? "bg-red-500"
-                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                  }`}
+                className={`h-full rounded-full ${
+                  totalCredits > 100
+                    ? "bg-red-500"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>
@@ -442,20 +454,22 @@ export function FantasyTeamSection({
                 Total Credits
               </span>
               <span
-                className={`font-bold ${totalCredits > 100
-                  ? "text-red-500"
-                  : "text-gray-900 dark:text-gray-100"
-                  }`}
+                className={`font-bold ${
+                  totalCredits > 100
+                    ? "text-red-500"
+                    : "text-gray-900 dark:text-gray-100"
+                }`}
               >
                 {totalCredits.toFixed(1)}/100.0
               </span>
             </div>
             <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${totalCredits > 100
-                  ? "bg-red-500"
-                  : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                  }`}
+                className={`h-full rounded-full ${
+                  totalCredits > 100
+                    ? "bg-red-500"
+                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                }`}
                 style={{ width: `${Math.min(totalCredits, 100)}%` }}
               />
             </div>

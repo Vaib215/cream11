@@ -9,18 +9,22 @@ import { fantasyCricketRules } from "@/constants/rules";
 import historicalData from "@/data/ipl_2024_player_data.json";
 import { unstable_cache } from "next/cache";
 
-const API_KEYS = process.env.GEMINI_API_KEYS?.split(',') || [process.env.GEMINI_API_KEY!];
+const API_KEYS = process.env.GEMINI_API_KEYS?.split(",") || [
+  process.env.GEMINI_API_KEY!,
+];
 let currentKeyIndex = 0;
 let rateLimitResetTime = 0;
 
-
-
 function isRateLimited(error: unknown) {
-  return error instanceof GoogleGenerativeAIError &&
-    (error.message.includes('quota') || error.message.includes('rate limit'));
+  return (
+    error instanceof GoogleGenerativeAIError &&
+    (error.message.includes("quota") || error.message.includes("rate limit"))
+  );
 }
 
-async function withKeyRotation<T>(fn: (genAI: GoogleGenerativeAI) => Promise<T>): Promise<T> {
+async function withKeyRotation<T>(
+  fn: (genAI: GoogleGenerativeAI) => Promise<T>
+): Promise<T> {
   const attempts = new Set<number>();
 
   while (attempts.size < API_KEYS.length) {
@@ -29,7 +33,7 @@ async function withKeyRotation<T>(fn: (genAI: GoogleGenerativeAI) => Promise<T>)
     try {
       // Wait if we hit rate limit recently
       if (Date.now() < rateLimitResetTime) {
-        await new Promise(resolve =>
+        await new Promise((resolve) =>
           setTimeout(resolve, rateLimitResetTime - Date.now())
         );
       }
@@ -47,7 +51,7 @@ async function withKeyRotation<T>(fn: (genAI: GoogleGenerativeAI) => Promise<T>)
     }
   }
 
-  throw new Error('All API keys exhausted');
+  throw new Error("All API keys exhausted");
 }
 
 interface FantasyTeamResult {
@@ -93,10 +97,10 @@ export const getCream11 = unstable_cache(
         );
 
         // Create list of valid player names from both teams
-        const validPlayerNames = playersWithCredits.map(p => p.name);
+        const validPlayerNames = playersWithCredits.map((p) => p.name);
 
         const model = genAI.getGenerativeModel({
-          model: "models/gemini-1.5-pro-latest",
+          model: "models/gemini-2.0-flash",
           systemInstruction: `You are an expert fantasy cricket analyst. Your task is to create the optimal fantasy team using ONLY players from ${match.home} and ${match.away}.
           
           STRICT RULES:
@@ -112,8 +116,9 @@ export const getCream11 = unstable_cache(
               parts: [
                 {
                   text: `
-                  I'm building a fantasy cricket team for a match between ${match.home
-                    } and ${match.away}.
+                  I'm building a fantasy cricket team for a match between ${
+                    match.home
+                  } and ${match.away}.
                   Here are all the available players with their roles and credits:
                   
                   ${JSON.stringify(playersWithCredits, null, 2)}
@@ -199,7 +204,8 @@ export const getCream11 = unstable_cache(
                 totalCredits: 0,
                 captain: "",
                 viceCaptain: "",
-                teamAnalysis: "Team analysis will be available after selection.",
+                teamAnalysis:
+                  "Team analysis will be available after selection.",
                 teamStats: {
                   winProbability: 50,
                   battingStrength: 60,
@@ -237,18 +243,24 @@ export const getCream11 = unstable_cache(
 
           // After parsing the AI response, validate players
           if (result.selectedPlayers) {
-            const validPlayers = result.selectedPlayers.filter(player =>
+            const validPlayers = result.selectedPlayers.filter((player) =>
               validPlayerNames.includes(player.name)
             );
 
             if (validPlayers.length !== result.selectedPlayers.length) {
-              console.error('AI suggested invalid players:',
-                result.selectedPlayers.filter(p => !validPlayerNames.includes(p.name))
+              console.error(
+                "AI suggested invalid players:",
+                result.selectedPlayers.filter(
+                  (p) => !validPlayerNames.includes(p.name)
+                )
               );
             }
 
             result.selectedPlayers = validPlayers;
-            result.totalCredits = validPlayers.reduce((sum, p) => sum + p.credits, 0);
+            result.totalCredits = validPlayers.reduce(
+              (sum, p) => sum + p.credits,
+              0
+            );
           }
 
           return result;
@@ -288,10 +300,10 @@ export const getCream11 = unstable_cache(
       }
     });
   },
-  ['getCream11', 'gemini-1.5-pro'],
+  ["getCream11", "gemini-1.5-pro"],
   {
     revalidate: 3600,
-    tags: ['cream11-cache']
+    tags: ["cream11-cache"],
   }
 );
 
@@ -300,7 +312,11 @@ interface ExtendedSelectedPlayer extends SelectedPlayer {
 }
 
 export const getCustomTeamAnalysis = unstable_cache(
-  async (match: Match, selectedPlayers: ExtendedSelectedPlayer[], aiSuggestedTeam: Player[]) => {
+  async (
+    match: Match,
+    selectedPlayers: ExtendedSelectedPlayer[],
+    aiSuggestedTeam: Player[]
+  ) => {
     return withKeyRotation(async () => {
       try {
         // First get all players from both teams
@@ -316,7 +332,9 @@ export const getCustomTeamAnalysis = unstable_cache(
           }))
         );
 
-        const model = new GoogleGenerativeAI(API_KEYS[currentKeyIndex]).getGenerativeModel({
+        const model = new GoogleGenerativeAI(
+          API_KEYS[currentKeyIndex]
+        ).getGenerativeModel({
           model: "models/gemini-2.0-flash",
           systemInstruction: `You are an expert fantasy cricket analyst. Your task is to analyze a given team based on comprehensive historical data of all available players.
 
@@ -342,8 +360,9 @@ export const getCustomTeamAnalysis = unstable_cache(
               parts: [
                 {
                   text: `
-                  Analyze this fantasy cricket team for ${match.home} vs ${match.away
-                    }.
+                  Analyze this fantasy cricket team for ${match.home} vs ${
+                    match.away
+                  }.
                     
                     COMPLETE HISTORICAL DATA OF ALL PLAYERS:
                     ${JSON.stringify(allPlayersWithHistory, null, 2)}
@@ -406,14 +425,18 @@ export const getCustomTeamAnalysis = unstable_cache(
         });
 
         // Parse and return the AI's analysis
+        let responseText = "";
         try {
-          const responseText = response.text();
+          responseText = response.text();
           const jsonMatch =
             responseText.match(/```json\n([\s\S]*?)\n```/) ||
             responseText.match(/{[\s\S]*?}/);
 
           if (!jsonMatch) {
-            console.error("Failed JSON extraction. Raw response:", responseText);
+            console.error(
+              "Failed JSON extraction. Raw response:",
+              responseText
+            );
             throw new Error("Could not extract JSON from response");
           }
 
@@ -423,24 +446,30 @@ export const getCustomTeamAnalysis = unstable_cache(
 
           // Add additional JSON cleanup
           const cleanedJson = jsonStr
-            .replace(/\\/g, '')
+            .replace(/\\/g, "")
             .replace(/(\w+):/g, '"$1":')
             .replace(/'/g, '"');
 
           return JSON.parse(cleanedJson);
         } catch (error) {
-          // @ts-expect-error - error is not defined
-          console.error("Failed to parse AI response:", { error, responseText });
-          throw new Error("Failed to analyze team. Please check your selections.");
+          console.error("Failed to parse AI response:", {
+            error,
+            responseText,
+          });
+          throw new Error(
+            "Failed to analyze team. Please check your selections."
+          );
         }
       } catch (err) {
         console.error("Error in getCustomTeamAnalysis:", err);
-        throw new Error("Failed to generate team analysis. Please try again later.");
+        throw new Error(
+          "Failed to generate team analysis. Please try again later."
+        );
       }
     });
   },
-  ['custom-team-analysis'],
-  { revalidate: 3600, tags: ['team-analysis-cache'] }
+  ["custom-team-analysis"],
+  { revalidate: 3600, tags: ["team-analysis-cache"] }
 );
 
 export async function getPlaying11OfTeams(match: Match) {

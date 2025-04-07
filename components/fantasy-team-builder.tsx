@@ -50,11 +50,11 @@ export function FantasyTeamBuilder({
   const [open, setOpen] = useState(false);
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
   const [isFantasyTeamExpanded, setIsFantasyTeamExpanded] = useState(true);
-  const [isAvailablePlayersExpanded, setIsAvailablePlayersExpanded] = useState(true);
+  const [isAvailablePlayersExpanded, setIsAvailablePlayersExpanded] =
+    useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Filter out players who are already in fantasy team
     setAvailablePlayers(
       allPlayers.filter(
         (player) => !fantasyTeam.some((p) => p.name === player.name)
@@ -85,7 +85,6 @@ export function FantasyTeamBuilder({
     const newTeam = fantasyTeam.map((player) => ({
       ...player,
       isCaptain: player.name === playerName,
-      // If this player is becoming captain and was vice-captain, remove vice-captain status
       isViceCaptain: player.name === playerName ? false : player.isViceCaptain,
     }));
     onFantasyTeamChange(newTeam);
@@ -94,7 +93,6 @@ export function FantasyTeamBuilder({
   const handleViceCaptainSelection = (playerName: string) => {
     const newTeam = fantasyTeam.map((player) => ({
       ...player,
-      // If this player is becoming vice-captain and was captain, remove captain status
       isCaptain: player.name === playerName ? false : player.isCaptain,
       isViceCaptain: player.name === playerName,
     }));
@@ -122,19 +120,17 @@ export function FantasyTeamBuilder({
     }
   };
 
-  // Group players by role for the fantasy team display
   const groupPlayersByRole = () => {
     const batters = fantasyTeam.filter((p) => p.role === "BATTER");
     const bowlers = fantasyTeam.filter((p) => p.role === "BOWLER");
     const allRounders = fantasyTeam.filter((p) => p.role === "ALL_ROUNDER");
     const wicketKeepers = fantasyTeam.filter((p) => p.role === "WICKET_KEEPER");
 
-    // If no role is specified for legacy data, use the old grouping
     if (fantasyTeam.some((p) => !p.role)) {
       return {
-        batters: fantasyTeam.slice(0, 5),
-        allRounders: fantasyTeam.slice(5, 7),
-        bowlers: fantasyTeam.slice(7),
+        batters: [],
+        allRounders: [],
+        bowlers: [],
         wicketKeepers: [],
       };
     }
@@ -150,7 +146,7 @@ export function FantasyTeamBuilder({
       <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <div
           className="flex items-center justify-between cursor-pointer md:cursor-default mb-4"
-          onClick={() => setIsFantasyTeamExpanded(prev => !prev)}
+          onClick={() => setIsFantasyTeamExpanded((prev) => !prev)}
         >
           <div className="flex items-center gap-2">
             <h4 className="font-bold text-sm sm:text-base text-gray-800 dark:text-gray-200">
@@ -168,10 +164,12 @@ export function FantasyTeamBuilder({
           />
         </div>
 
-        <div className={cn(
-          "space-y-4 transition-all duration-300",
-          !isFantasyTeamExpanded && "hidden md:block"
-        )}>
+        <div
+          className={cn(
+            "space-y-4 transition-all duration-300",
+            !isFantasyTeamExpanded && "hidden md:block"
+          )}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Batters Section */}
             <div className="space-y-2">
@@ -286,7 +284,9 @@ export function FantasyTeamBuilder({
                   const isMobile = window.matchMedia("(hover: none)").matches;
                   if (isMobile) {
                     // Only close if the interaction is outside the popover content
-                    const contentEl = document.querySelector('[data-radix-popper-content-wrapper]');
+                    const contentEl = document.querySelector(
+                      "[data-radix-popper-content-wrapper]"
+                    );
                     if (contentEl && !contentEl.contains(e.target as Node)) {
                       setOpen(false);
                     }
@@ -295,9 +295,9 @@ export function FantasyTeamBuilder({
                   }
                 }}
                 style={{
-                  maxHeight: '50vh',
-                  overflow: 'auto',
-                  touchAction: 'manipulation'
+                  maxHeight: "50vh",
+                  overflow: "auto",
+                  touchAction: "manipulation",
                 }}
               >
                 <Command className="border border-purple-100 dark:border-purple-900">
@@ -341,7 +341,7 @@ export function FantasyTeamBuilder({
       <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <div
           className="flex items-center justify-between cursor-pointer md:cursor-default mb-4"
-          onClick={() => setIsAvailablePlayersExpanded(prev => !prev)}
+          onClick={() => setIsAvailablePlayersExpanded((prev) => !prev)}
         >
           <div className="flex items-center gap-2">
             <h4 className="font-bold text-sm sm:text-base text-gray-800 dark:text-gray-200">
@@ -359,10 +359,12 @@ export function FantasyTeamBuilder({
           />
         </div>
 
-        <div className={cn(
-          "transition-all duration-300",
-          !isAvailablePlayersExpanded && "hidden md:block"
-        )}>
+        <div
+          className={cn(
+            "transition-all duration-300",
+            !isAvailablePlayersExpanded && "hidden md:block"
+          )}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             {availablePlayers.slice(0, 12).map((player) => (
               <EnhancedPlayerCard
@@ -370,9 +372,13 @@ export function FantasyTeamBuilder({
                 player={player}
                 isAvailable={true}
                 //@ts-expect-error - This is a workaround to prevent the drag and drop from working on mobile devices
-                onDragStart={('ontouchstart' in window) ? undefined : (e) => handleDragStart(e, player)}
+                onDragStart={
+                  "ontouchstart" in window
+                    ? undefined
+                    : (e) => handleDragStart(e, player)
+                }
                 //@ts-expect-error - This is a workaround to prevent the drag and drop from working on mobile devices
-                onDragEnd={('ontouchstart' in window) ? undefined : handleDragEnd}
+                onDragEnd={"ontouchstart" in window ? undefined : handleDragEnd}
                 onClick={() => handleSelect(player)}
               />
             ))}
@@ -416,18 +422,19 @@ function EnhancedPlayerCard({
 
   return (
     <div
-      draggable={!('ontouchstart' in window)}
+      draggable={!("ontouchstart" in window)}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
       onTouchStart={() => setIsPressed(true)}
       onTouchEnd={() => setIsPressed(false)}
-      className={`relative group flex items-center p-2 sm:p-3 rounded-lg border ${isAvailable
-        ? "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
-        : "border-gray-200 dark:border-gray-700"
-        } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${onClick ? "cursor-pointer active:scale-95" : ""
-        } ${isPressed ? "scale-95" : ""} ${isAvailable ? "hover:shadow-md" : ""
-        }`}
+      className={`relative group flex items-center p-2 sm:p-3 rounded-lg border ${
+        isAvailable
+          ? "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
+          : "border-gray-200 dark:border-gray-700"
+      } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${
+        onClick ? "cursor-pointer active:scale-95" : ""
+      } ${isPressed ? "scale-95" : ""} ${isAvailable ? "hover:shadow-md" : ""}`}
     >
       {/* Player Image */}
       <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
@@ -487,10 +494,11 @@ function EnhancedPlayerCard({
                     e.stopPropagation();
                     onCaptainSelect(player.name);
                   }}
-                  className={`flex items-center justify-center h-5 w-5 rounded-full ${player.isCaptain
-                    ? "bg-yellow-400 text-yellow-800"
-                    : "bg-gray-100 hover:bg-yellow-100 text-gray-600 hover:text-yellow-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
-                    }`}
+                  className={`flex items-center justify-center h-5 w-5 rounded-full ${
+                    player.isCaptain
+                      ? "bg-yellow-400 text-yellow-800"
+                      : "bg-gray-100 hover:bg-yellow-100 text-gray-600 hover:text-yellow-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-yellow-400"
+                  }`}
                 >
                   <span className="text-[8px] font-bold">C</span>
                 </button>
@@ -513,10 +521,11 @@ function EnhancedPlayerCard({
                     e.stopPropagation();
                     onViceCaptainSelect(player.name);
                   }}
-                  className={`flex items-center justify-center h-5 w-5 rounded-full ${player.isViceCaptain
-                    ? "bg-gray-400 text-gray-800"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
-                    }`}
+                  className={`flex items-center justify-center h-5 w-5 rounded-full ${
+                    player.isViceCaptain
+                      ? "bg-gray-400 text-gray-800"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
+                  }`}
                 >
                   <span className="text-[8px] font-bold">VC</span>
                 </button>
