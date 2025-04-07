@@ -1,7 +1,7 @@
 "use client";
 
+import { MessageCircleQuestionIcon } from "lucide-react";
 import { useState } from "react";
-import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 
 export function HowToUseGuide() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +12,7 @@ export function HowToUseGuide() {
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-1 text-xs md:text-sm text-white bg-indigo-500 hover:bg-indigo-600 px-2 py-1 rounded-full transition-colors"
       >
-        <QuestionMarkCircleIcon className="h-4 w-4" />
+        <MessageCircleQuestionIcon className="h-4 w-4" />
         <span>How to Use</span>
       </button>
 
