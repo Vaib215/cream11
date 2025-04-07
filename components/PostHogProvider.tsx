@@ -31,6 +31,7 @@ function PostHogPageView() {
   useEffect(() => {
     if (pathname && posthog) {
       let url = window.origin + pathname
+      //@ts-expect-error - searchParams is not typed
       const search = searchParams.toString()
       if (search) {
         url += "?" + search

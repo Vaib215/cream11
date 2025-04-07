@@ -434,6 +434,7 @@ export async function getCustomTeamAnalysis(
         : jsonMatch[1];
       return JSON.parse(jsonStr);
     } catch (error) {
+      // @ts-expect-error - responseText is not defined
       console.error("Failed to parse AI response:", { error, responseText });
       throw new Error("Failed to analyze team. Please check your selections.");
     }
