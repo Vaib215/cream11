@@ -51,7 +51,7 @@ export function HowToUseGuide() {
                     What is Cream11?
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300 text-sm">
-                    We're your AI-powered fantasy cricket assistant. Our
+                    We&apos;re your AI-powered fantasy cricket assistant. Our
                     advanced AI analyzes player performance, pitch conditions,
                     historical data, and team dynamics to suggest the optimal
                     fantasy team for each match.
