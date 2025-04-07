@@ -266,7 +266,12 @@ export function FantasyTeamBuilder({
                   role="combobox"
                   aria-expanded={open}
                   className="w-full justify-between text-xs sm:text-sm"
-                  onTouchStart={() => setOpen(true)}
+                  onClick={(e) => {
+                    if (window.matchMedia("(hover: none)").matches) {
+                      e.preventDefault();
+                      setOpen(!open);
+                    }
+                  }}
                 >
                   Add Player
                   <ChevronsUpDown className="ml-2 h-3 w-3 sm:h-4 sm:w-4 shrink-0 opacity-50" />
@@ -274,9 +279,26 @@ export function FantasyTeamBuilder({
               </PopoverTrigger>
               <PopoverContent
                 className="w-full p-0"
-                side="bottom"
-                align="center"
-                style={{ maxHeight: '50vh', overflow: 'auto' }}
+                side="top"
+                align="start"
+                avoidCollisions={false}
+                onInteractOutside={(e) => {
+                  const isMobile = window.matchMedia("(hover: none)").matches;
+                  if (isMobile) {
+                    // Only close if the interaction is outside the popover content
+                    const contentEl = document.querySelector('[data-radix-popper-content-wrapper]');
+                    if (contentEl && !contentEl.contains(e.target as Node)) {
+                      setOpen(false);
+                    }
+                  } else {
+                    setOpen(false);
+                  }
+                }}
+                style={{
+                  maxHeight: '50vh',
+                  overflow: 'auto',
+                  touchAction: 'manipulation'
+                }}
               >
                 <Command className="border border-purple-100 dark:border-purple-900">
                   <CommandInput
@@ -290,7 +312,10 @@ export function FantasyTeamBuilder({
                         <CommandItem
                           key={player.name}
                           value={player.name}
-                          onSelect={() => handleSelect(player)}
+                          onSelect={() => {
+                            handleSelect(player);
+                            setOpen(false);
+                          }}
                           className="text-xs sm:text-sm"
                         >
                           <div
