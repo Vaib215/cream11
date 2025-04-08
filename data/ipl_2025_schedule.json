@@ -162,6 +162,14 @@
     },
     {
       "date": "08-Apr-25",
+      "start": "3:30 PM",
+      "venue": "Kolkata",
+      "home": "Kolkata Knight Riders",
+      "away": "Lucknow Super Giants",
+      "gameday_id": 19
+    },
+    {
+      "date": "08-Apr-25",
       "start": "7:30 PM",
       "venue": "New Chandigarh",
       "home": "Punjab Kings",
