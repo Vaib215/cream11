@@ -45,9 +45,9 @@ export function HowToUseGuide() {
           <p>
             When you select a match, the tool automatically generates an initial
             <strong>AI-suggested optimal team</strong> based on its analysis.
-            You'll see this team pre-selected in the builder, along with its
-            calculated performance metrics (Win Probability, Strengths, Balance)
-            and a detailed analysis.
+            You&apos;ll see this team pre-selected in the builder, along with
+            its calculated performance metrics (Win Probability, Strengths,
+            Balance) and a detailed analysis.
           </p>
 
           <h4>Building Your Team</h4>
@@ -60,8 +60,9 @@ export function HowToUseGuide() {
             </li>
             <li>
               <strong>Set Captain (C) & Vice-Captain (VC):</strong> Click the
-              'C' and 'VC' buttons on a player's card in your team list.
-              Remember, Captain gets 2x points, Vice-Captain gets 1.5x.
+              &apos;C&apos; and &apos;VC&apos; buttons on a player&apos;s card
+              in your team list. Remember, Captain gets 2x points, Vice-Captain
+              gets 1.5x.
             </li>
             <li>
               <strong>Monitor Credits:</strong> Keep an eye on the total credits
@@ -73,7 +74,8 @@ export function HowToUseGuide() {
           <p>
             As you modify the team, the performance metrics (Win Probability,
             Strengths, etc.) will <strong>dynamically update</strong> based on a
-            re-analysis performed by the AI using the players you've selected.
+            re-analysis performed by the AI using the players you&apos;ve
+            selected.
           </p>
           <p>
             The detailed text analysis section will also update to reflect the
@@ -93,7 +95,7 @@ export function HowToUseGuide() {
             </li>
             <li>
               <strong>AI Comparison:</strong> The analysis compares your custom
-              team to the AI's optimal suggestion.
+              team to the AI&apos;s optimal suggestion.
             </li>
           </ul>
         </div>

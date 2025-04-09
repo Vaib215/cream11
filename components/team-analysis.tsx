@@ -8,7 +8,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 interface TeamAnalysisProps {
   analysis: string;

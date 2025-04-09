@@ -16,12 +16,9 @@ export function MatchFantasySelector({
     allMatchesData[0]?.id || ""
   );
 
-  if (!allMatchesData || allMatchesData.length === 0) {
-    return <div>Error: No match data provided.</div>;
-  }
-
   // Memoize the derivation of players for the selected match to avoid recalculating on every render
   const selectedMatchDataAndPlayers = useMemo(() => {
+    // Default to first match if no match is found with the selected ID
     const match =
       allMatchesData.find((m) => m.id === selectedMatchId) || allMatchesData[0];
     const players: Player[] = [
@@ -30,6 +27,11 @@ export function MatchFantasySelector({
     ];
     return { match, players };
   }, [selectedMatchId, allMatchesData]);
+
+  // Early return after the hook definition
+  if (!allMatchesData || allMatchesData.length === 0) {
+    return <div>Error: No match data provided.</div>;
+  }
 
   const { match: selectedMatchData, players: allPlayersForSelectedMatch } =
     selectedMatchDataAndPlayers;
@@ -62,6 +64,7 @@ export function MatchFantasySelector({
           </button>
         ))}
       </div>
+
       {/* Render content for the selected match */}
       <div className="mt-0">
         <FantasyTeamSection
