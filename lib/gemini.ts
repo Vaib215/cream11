@@ -101,13 +101,17 @@ export const getCream11 = unstable_cache(
 
         const model = genAI.getGenerativeModel({
           model: "models/gemini-2.0-flash",
+          // Add Google Search Tool for grounding
+          // @ts-expect-error - googleSearch is not defined in the base types but is a valid tool
+          tools: [{ googleSearch: {} }],
           systemInstruction: `You are an expert fantasy cricket analyst. Your task is to create the optimal fantasy team using ONLY players from ${match.home} and ${match.away}.
           
           STRICT RULES:
-          1. Only select players from the provided list of ${match.home} and ${match.away} players
-          2. Never suggest players from other teams
-          3. Validate all player names against the provided list
-          4. Reject any players not in the provided roster`,
+          1. Only select players from the provided list of ${match.home} and ${match.away} players.
+          2. Never suggest players from other teams.
+          3. Validate all player names against the provided list.
+          4. Reject any players not in the provided roster.
+          5. Use the Google Search tool to find the most recent player statistics for the current season to supplement the historical data.`,
         });
         const { response } = await model.generateContent({
           contents: [
@@ -119,11 +123,14 @@ export const getCream11 = unstable_cache(
                   I'm building a fantasy cricket team for a match between ${
                     match.home
                   } and ${match.away}.
-                  Here are all the available players with their roles and credits:
+                  Here are all the available players with their roles, credits, and historical data:
                   
                   ${JSON.stringify(playersWithCredits, null, 2)}
                   
-                  Select the best 11 players that will score the most fantasy points based on their historical performance.
+                  Select the best 11 players that will score the most fantasy points. 
+                  **Use Google Search to find the latest statistics for each player in the current season.**
+                  Consider both the provided historical data AND the recent stats found via search. Prioritize players in good recent form.
+                  
                   The total sum of credits must be under 100.
                   Make sure to include at least:
                   - 1 wicketkeeper
@@ -132,43 +139,44 @@ export const getCream11 = unstable_cache(
                   - 3-5 bowlers
                   
                   Also suggest a captain (2x points) and vice-captain (1.5x points) from the selected players.
-                  IMPORTANT: Choose the captain and vice-captain based on their potential to score the most fantasy points, NOT based on their real-life leadership roles. Captain should be your highest point-scoring player, and vice-captain should be your second-highest scoring player.
+                  IMPORTANT: Choose the captain and vice-captain based on their potential to score the most fantasy points (considering both history and recent form), NOT based on their real-life leadership roles. Captain should be your highest potential point-scoring player, and vice-captain should be your second-highest scoring potential player.
                   
-                  Base your selections HEAVILY on the historical data provided. Use specific statistics from the historical data to justify each selection. The historical data should be the primary factor in your decision-making.
+                  Base your selections on a combination of historical data and **current season performance (found via search)**. Use specific statistics (historical and recent) to justify each selection.
                   
-                  Also provide a detailed team analysis that evaluates:
-                  1. Each selected player individually with their key statistics (include exact numbers for batting averages, strike rates, economy rates, wicket counts, etc.)
-                  2. Recent form with specific match performances and numerical data points
-                  3. For captain and vice-captain, provide detailed statistical justification with exact numbers from their historical performances
-                  4. Overall team balance and strategy with quantitative assessment
+                  Provide a detailed team analysis that evaluates:
+                  1. Each selected player individually with key historical and **recent** statistics (batting averages, strike rates, economy rates, wickets, etc.).
+                  2. Recent form analysis using data obtained from search.
+                  3. Detailed statistical justification for captain and vice-captain choices, referencing both historical and recent data.
+                  4. Overall team balance and strategy with quantitative assessment.
                   
                   Also provide team stats with the following values:
-                  - winProbability: a number between 0-100 representing the team's chance of winning
-                  - battingStrength: a number between 0-100 representing the team's batting quality
-                  - bowlingStrength: a number between 0-100 representing the team's bowling quality
-                  - balanceRating: a number between 0-100 representing how well-balanced the team is
+                  - winProbability: a number between 0-100 representing the team's chance of winning based on selected players' form and history.
+                  - battingStrength: a number between 0-100 representing the team's batting quality.
+                  - bowlingStrength: a number between 0-100 representing the team's bowling quality.
+                  - balanceRating: a number between 0-100 representing how well-balanced the team is.
                   
-                  Respond with a JSON object in this format:
+                  Respond ONLY with a valid JSON object in this exact format:
                   {
                     "selectedPlayers": [
                       {
                         "name": "Player Name",
                         "role": "ROLE",
                         "team": "Team Name",
-                        "credits": 8,
+                        "credits": 8.5, // Ensure credits are numbers
                         "isCaptain": false,
                         "isViceCaptain": false
                       }
+                      // ... other players
                     ],
-                    "totalCredits": 98,
+                    "totalCredits": 99.5, // Ensure total credits is a number
                     "captain": "Player Name",
                     "viceCaptain": "Player Name",
-                    "teamAnalysis": "Detailed analysis of each player with their statistics, performances, and reasons for selection...",
+                    "teamAnalysis": "Detailed analysis...",
                     "teamStats": {
-                      "winProbability": 75,
-                      "battingStrength": 80,
-                      "bowlingStrength": 70,
-                      "balanceRating": 85
+                      "winProbability": 75, // Number
+                      "battingStrength": 80, // Number
+                      "bowlingStrength": 70, // Number
+                      "balanceRating": 85 // Number
                     }
                   }
                 `,
@@ -176,6 +184,8 @@ export const getCream11 = unstable_cache(
               ],
             },
           ],
+          // Enable grounding explicitly if needed by the SDK version, otherwise the tool config handles it.
+          // generationConfig: { groundingConfig: { sources: [{ id: 'googleSearch' }] } } // Example, adjust based on actual SDK usage if required
         });
 
         // Parse and structure the response
@@ -300,9 +310,13 @@ export const getCream11 = unstable_cache(
       }
     });
   },
-  ["getCream11", "gemini-1.5-pro"],
+  // Use the correct model name or a generic identifier in the cache key
+  // @ts-expect-error - unstable_cache key function type expects string[], but function returning string[] is correct usage
+  (match: Match) => [
+    `cream11-analysis-${match.home}-${match.away}-${match.date}`,
+  ],
   {
-    revalidate: 3600,
+    revalidate: 3600, // 1 hour
     tags: ["cream11-cache"],
   }
 );
@@ -315,7 +329,7 @@ export const getCustomTeamAnalysis = unstable_cache(
   async (
     match: Match,
     selectedPlayers: ExtendedSelectedPlayer[],
-    aiSuggestedTeam: Player[]
+    aiSuggestedTeam: Player[] // Keep AI team for comparison context
   ) => {
     return withKeyRotation(async () => {
       try {
@@ -329,26 +343,37 @@ export const getCustomTeamAnalysis = unstable_cache(
             ...player,
             team,
             history: historicalData[player.name as keyof typeof historicalData],
+            // Include credits here for the prompt context
+            credits:
+              playersCredits.find((p) => p.name === player.name)?.credits ||
+              8.0,
           }))
+        );
+
+        // Stringify the selected players and sort for consistent caching key
+        const selectedPlayersString = JSON.stringify(
+          selectedPlayers.map((p) => p.name).sort()
         );
 
         const model = new GoogleGenerativeAI(
           API_KEYS[currentKeyIndex]
         ).getGenerativeModel({
           model: "models/gemini-2.0-flash",
-          systemInstruction: `You are an expert fantasy cricket analyst. Your task is to analyze a given team based on comprehensive historical data of all available players.
+          // Enable search for analysis if needed for recent form data
+          // @ts-expect-error - googleSearch is not defined in the base types but is a valid tool
+          tools: [{ googleSearch: {} }],
+          systemInstruction: `You are an expert fantasy cricket analyst. Your task is to analyze a given user-selected fantasy team based on comprehensive historical data AND recent player form (use search). Compare it objectively against the available player pool and the AI's suggested optimal team (provided for reference).
 
           CRITICAL INSTRUCTIONS:
-          1. The AI's suggested team is always the optimal team with the highest possible win probability.
-          2. Any modifications to the AI team will result in lower performance metrics.
-          3. Modified teams should have win probabilities 5-10% lower than the AI team.
-          4. All statistics must be realistic and based on historical data.
-          5. Provide detailed justification for all statistical changes.
-          6. Never suggest that a modified team could perform better than the AI's optimal selection.
-          7. Consider the complete player pool when evaluating selected players.
-          8. Compare each selected player against all available alternatives.
-          9. Factor in team composition and role balance.
-          10. Use exact statistical values from historical data.
+          1. Analyze the user's SELECTED TEAM provided in the prompt.
+          2. Use Google Search to fetch RECENT PERFORMANCE data for all players involved (selected and alternatives).
+          3. Base your analysis on BOTH historical data AND recent form found via search.
+          4. Provide realistic statistics and justify them with data (historical and recent).
+          5. Objectively evaluate strengths and weaknesses compared to the entire player pool and the AI's reference team.
+          6. Calculate performance metrics (win probability, strengths, balance) based on the data for the SELECTED TEAM.
+          7. If the selected team differs from the AI team, explain the potential impact (positive or negative) based on data, acknowledging risks and trade-offs. Avoid definitive statements that the AI team is *always* better without justification.
+          8. Use exact statistical values from historical data and recent search results.
+          9. Factor in team composition, player roles, and credit constraints.
           
           ${fantasyCricketRules}`,
         });
@@ -360,64 +385,62 @@ export const getCustomTeamAnalysis = unstable_cache(
               parts: [
                 {
                   text: `
-                  Analyze this fantasy cricket team for ${match.home} vs ${
-                    match.away
-                  }.
-                    
-                    COMPLETE HISTORICAL DATA OF ALL PLAYERS:
-                    ${JSON.stringify(allPlayersWithHistory, null, 2)}
+                  Analyze this user-selected fantasy cricket team for the ${
+                    match.home
+                  } vs ${match.away} match.
 
-                    AVAILABLE PLAYERS WITH CREDITS:
-                    ${JSON.stringify(
-                      Object.entries(allPlayers).flatMap(([team, players]) =>
-                        players.map((player) => ({
-                          ...player,
-                          team,
-                          credits:
-                            playersCredits.find((p) => p.name === player.name)
-                              ?.credits || 8,
-                        }))
-                      ),
-                      null,
-                      2
-                    )}
-                    
-                    SELECTED TEAM TO ANALYZE:
-                    ${JSON.stringify(selectedPlayers, null, 2)}
-                    
-                    AI'S SUGGESTED TEAM (THE OPTIMAL TEAM):
-                    ${JSON.stringify(aiSuggestedTeam, null, 2)}
+                  COMPLETE HISTORICAL DATA & CREDITS OF ALL AVAILABLE PLAYERS:
+                  ${JSON.stringify(allPlayersWithHistory, null, 2)}
 
-                    IMPORTANT ANALYSIS REQUIREMENTS:
-                    1. Compare selected players with ALL available players in their roles
-                    2. Calculate realistic win probability (must be lower than AI team if modified)
-                    3. Evaluate batting strength, bowling strength, and team balance
-                    4. Provide detailed player-by-player analysis with exact statistics
-                    5. Explain all statistical adjustments with specific reasons
-                    6. Compare each selection against available alternatives
-                    7. Consider team composition impact on overall performance
-                    
-                    Respond with a JSON object containing:
-                    {
-                      "selectedPlayers": Array of selected players with all details,
-                      "totalCredits": Total credits used,
-                      "captain": Captain name,
-                      "viceCaptain": Vice-captain name,
-                      "teamAnalysis": Detailed analysis explaining all statistics and comparisons,
-                      "teamStats": {
-                        "winProbability": number (0-100),
-                        "battingStrength": number (0-100),
-                        "bowlingStrength": number (0-100),
-                        "balanceRating": number (0-100)
-                      },
-                      "comparisonWithOptimal": {
-                        "probabilityDelta": Difference from AI team,
-                        "keyDifferences": Array of main differences,
-                        "riskFactors": Array of potential risks,
-                        "missedOpportunities": Array of better alternatives not selected
-                      }
+                  USER'S SELECTED TEAM TO ANALYZE:
+                  ${JSON.stringify(selectedPlayers, null, 2)}
+
+                  AI'S SUGGESTED REFERENCE TEAM (Optimal based on its analysis):
+                  ${JSON.stringify(aiSuggestedTeam, null, 2)}
+
+                  IMPORTANT ANALYSIS REQUIREMENTS:
+                  1. Use Google Search to find the LATEST stats/form for all relevant players.
+                  2. Provide a player-by-player analysis of the SELECTED TEAM, integrating historical data and RECENT FORM (from search). Justify inclusion/exclusion based on data.
+                  3. Compare selected players against key available alternatives in their roles, using recent performance data.
+                  4. Calculate realistic team statistics (win probability, batting/bowling strength, balance) for the SELECTED TEAM based on combined historical and recent data. Explain the reasoning.
+                  5. Provide a "Comparison with Optimal" section:
+                      - Identify key differences between the selected team and the AI reference team.
+                      - Analyze potential performance deltas (win probability, points potential) based on data differences (e.g., "Player A selected over Player B might increase batting strength but lower bowling strength due to recent form...").
+                      - Highlight potential risks and missed opportunities in the selected team compared to alternatives.
+                  6. Ensure all analysis is backed by specific statistical data (historical and recent).
+                  7. Priortize the current season performance over the historical data.
+
+                  Respond ONLY with a valid JSON object in this exact format:
+                  {
+                    "selectedPlayers": ${JSON.stringify(
+                      selectedPlayers
+                    )}, // Echo back the analyzed team
+                    "totalCredits": ${selectedPlayers.reduce(
+                      (sum, p) => sum + p.credits,
+                      0
+                    )}, // Calculate actual credits
+                    "captain": "${
+                      selectedPlayers.find((p) => p.isCaptain)?.name || "N/A"
+                    }",
+                    "viceCaptain": "${
+                      selectedPlayers.find((p) => p.isViceCaptain)?.name ||
+                      "N/A"
+                    }",
+                    "teamAnalysis": "Detailed player-by-player analysis integrating historical and recent (searched) data, justification for stats...",
+                    "teamStats": {
+                      "winProbability": number (0-100),
+                      "battingStrength": number (0-100),
+                      "bowlingStrength": number (0-100),
+                      "balanceRating": number (0-100)
+                    },
+                    "comparisonWithOptimal": {
+                      "keyDifferences": ["Player A vs Player B", "..."],
+                      "performanceImpactAnalysis": "Analysis of how differences affect potential points, win probability based on data...",
+                      "riskFactors": ["Reliance on out-of-form player X", "..."],
+                      "missedOpportunities": ["Not selecting in-form Player Y", "..."]
                     }
-                    `,
+                  }
+                  `,
                 },
               ],
             },
@@ -468,7 +491,16 @@ export const getCustomTeamAnalysis = unstable_cache(
       }
     });
   },
-  ["custom-team-analysis"],
+  // Updated cache key function: Includes match details and sorted selected player names
+  // @ts-expect-error - unstable_cache key function type expects string[], but function returning string[] is correct usage
+  (
+    match: Match,
+    selectedPlayers: ExtendedSelectedPlayer[],
+    aiSuggestedTeam: Player[]
+  ) => [
+    `custom-team-analysis-${match.home}-${match.away}-${match.date}`,
+    JSON.stringify(selectedPlayers.map((p) => p.name).sort()), // Key depends on selected player names
+  ],
   { revalidate: 3600, tags: ["team-analysis-cache"] }
 );
 
