@@ -350,11 +350,6 @@ export const getCustomTeamAnalysis = unstable_cache(
           }))
         );
 
-        // Stringify the selected players and sort for consistent caching key
-        const selectedPlayersString = JSON.stringify(
-          selectedPlayers.map((p) => p.name).sort()
-        );
-
         const model = new GoogleGenerativeAI(
           API_KEYS[currentKeyIndex]
         ).getGenerativeModel({
@@ -491,13 +486,8 @@ export const getCustomTeamAnalysis = unstable_cache(
       }
     });
   },
-  // Updated cache key function: Includes match details and sorted selected player names
   // @ts-expect-error - unstable_cache key function type expects string[], but function returning string[] is correct usage
-  (
-    match: Match,
-    selectedPlayers: ExtendedSelectedPlayer[],
-    aiSuggestedTeam: Player[]
-  ) => [
+  (match: Match, selectedPlayers: ExtendedSelectedPlayer[]) => [
     `custom-team-analysis-${match.home}-${match.away}-${match.date}`,
     JSON.stringify(selectedPlayers.map((p) => p.name).sort()), // Key depends on selected player names
   ],
