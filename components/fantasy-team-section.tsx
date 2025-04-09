@@ -10,6 +10,12 @@ import { analyzeTeam } from "@/app/actions";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@radix-ui/react-tooltip";
 
 interface FantasyTeamSectionProps {
   allPlayers: Player[];
@@ -164,46 +170,83 @@ export function FantasyTeamSection({
     return createSuggestedBest11();
   }, [aiSuggestedTeam, allPlayers, createSuggestedBest11]);
 
-  // Calculate stats based on team composition - keeping this for fallback
-  const calculateAndSetStats = useCallback(
-    (team: Player[]) => {
-      if (team.length === 0) {
+  // Function to reanalyze the modified team
+  const handleReanalyze = useCallback(
+    async (currentTeam: Player[]) => {
+      if (currentTeam.length === 0) {
+        console.log("Skipping analysis for empty team.");
         setStats({
           winProbability: 0,
           battingStrength: 0,
           bowlingStrength: 0,
           balanceRating: 0,
         });
+        setNeedsReanalysis(false);
         return;
       }
+      setReanalyzing(true);
+      setNeedsReanalysis(false); // Reset flag as we are attempting analysis
+      try {
+        // Use the passed currentTeam instead of the state variable which might not be updated yet
+        const aiSuggestedTeamPlayers = aiSuggestedTeam?.selectedPlayers || [];
 
-      // If AI stats are available, use them as a base
-      const baseStats = aiSuggestedTeam?.teamStats || {
-        winProbability: 0,
-        battingStrength: 0,
-        bowlingStrength: 0,
-        balanceRating: 0,
-      };
+        // Ensure players have necessary info for analysis, including teamColor
+        const teamForAnalysis = currentTeam.map((p) => {
+          // Find the corresponding full player data to get teamColor
+          const fullPlayerData = allPlayers.find((ap) => ap.name === p.name);
+          return {
+            name: p.name,
+            role: p.role,
+            team: p.team,
+            credits: p.credits,
+            isCaptain: p.isCaptain,
+            isViceCaptain: p.isViceCaptain,
+            isImpactPlayer: p.isImpactPlayer,
+            imageUrl: p.imageUrl,
+            // Add teamColor, defaulting if not found (should ideally exist)
+            teamColor: fullPlayerData?.teamColor || "#FFFFFF",
+          };
+        });
 
-      // Calculate new stats...
-      const winProb = baseStats.winProbability || Math.random() * 100;
-      const battingStrength = baseStats.battingStrength || Math.random() * 100;
-      const bowlingStrength = baseStats.bowlingStrength || Math.random() * 100;
-      const balance = baseStats.balanceRating || Math.random() * 100;
+        const result = await analyzeTeam(
+          teamForAnalysis,
+          aiSuggestedTeamPlayers as Player[]
+        );
 
-      setStats({
-        winProbability: Math.round(winProb),
-        battingStrength: Math.round(battingStrength),
-        bowlingStrength: Math.round(bowlingStrength),
-        balanceRating: Math.round(balance),
-      });
+        if (result?.teamStats) {
+          setStats({
+            winProbability: result.teamStats.winProbability,
+            battingStrength: result.teamStats.battingStrength,
+            bowlingStrength: result.teamStats.bowlingStrength,
+            balanceRating: result.teamStats.balanceRating,
+          });
+        } else {
+          console.warn("Reanalysis did not return valid team stats.");
+          setStats({
+            winProbability: 0,
+            battingStrength: 0,
+            bowlingStrength: 0,
+            balanceRating: 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to reanalyze team:", error);
+        setStats({
+          winProbability: 0,
+          battingStrength: 0,
+          bowlingStrength: 0,
+          balanceRating: 0,
+        });
+      } finally {
+        setReanalyzing(false);
+      }
     },
-    [aiSuggestedTeam?.teamStats]
+    [aiSuggestedTeam, allPlayers]
   );
 
-  // Update team, credits, and stats when team changes
+  // Update team, credits, and trigger reanalysis when team changes
   const handleFantasyTeamChange = useCallback(
-    (newTeam: Player[]) => {
+    async (newTeam: Player[]) => {
       setFantasyTeam(newTeam);
 
       // Calculate total credits
@@ -213,48 +256,53 @@ export function FantasyTeamSection({
       );
       setTotalCredits(credits);
 
-      // Check if team differs from AI suggestion
+      // Check if team differs from AI suggestion or if no AI suggestion exists
+      let teamDiffers = true; // Assume difference initially
       if (aiSuggestedTeam?.selectedPlayers) {
-        // First check if team sizes match
-        if (aiSuggestedTeam.selectedPlayers.length !== newTeam.length) {
-          setNeedsReanalysis(true);
-          calculateAndSetStats(newTeam);
-          return;
+        if (aiSuggestedTeam.selectedPlayers.length === newTeam.length) {
+          teamDiffers = !newTeam.every((player) => {
+            const aiPlayer = aiSuggestedTeam.selectedPlayers.find(
+              (p) => p.name === player.name
+            );
+            return (
+              aiPlayer &&
+              aiPlayer.isCaptain === player.isCaptain &&
+              aiPlayer.isViceCaptain === player.isViceCaptain &&
+              aiPlayer.role === player.role
+            );
+          });
         }
+      }
 
-        // Check if all players match exactly including their roles
-        const teamDiffers = !newTeam.every((player) => {
-          const aiPlayer = aiSuggestedTeam.selectedPlayers.find(
-            (p) => p.name === player.name
-          );
-          return (
-            aiPlayer &&
-            aiPlayer.isCaptain === player.isCaptain &&
-            aiPlayer.isViceCaptain === player.isViceCaptain &&
-            aiPlayer.role === player.role
-          );
-        });
-
-        setNeedsReanalysis(teamDiffers);
-
+      // If the team is different or there was no initial AI team, reanalyze
+      if (teamDiffers || !aiSuggestedTeam?.selectedPlayers) {
+        // Avoid calling analyzeTeam if the team is empty
+        if (newTeam.length > 0) {
+          await handleReanalyze(newTeam); // Pass newTeam directly
+        } else {
+          // Reset stats if team is cleared
+          setStats({
+            winProbability: 0,
+            battingStrength: 0,
+            bowlingStrength: 0,
+            balanceRating: 0,
+          });
+          setNeedsReanalysis(false); // No need to reanalyze an empty team
+        }
+      } else {
         // If team matches AI suggestion exactly, use AI stats
-        if (!teamDiffers && aiSuggestedTeam.teamStats) {
+        if (aiSuggestedTeam.teamStats) {
           setStats({
             winProbability: aiSuggestedTeam.teamStats.winProbability,
             battingStrength: aiSuggestedTeam.teamStats.battingStrength,
             bowlingStrength: aiSuggestedTeam.teamStats.bowlingStrength,
             balanceRating: aiSuggestedTeam.teamStats.balanceRating,
           });
-        } else {
-          // Calculate stats for modified team
-          calculateAndSetStats(newTeam);
+          setNeedsReanalysis(false); // Team matches, no reanalysis needed
         }
-      } else {
-        // If no AI suggestion available, just calculate stats
-        calculateAndSetStats(newTeam);
       }
     },
-    [calculateAndSetStats, aiSuggestedTeam]
+    [aiSuggestedTeam, handleReanalyze]
   );
 
   // Reset team to a basic suggested team
@@ -262,30 +310,6 @@ export function FantasyTeamSection({
     const suggestedTeam = createSuggestedBest11();
     handleFantasyTeamChange(suggestedTeam);
   }, [createSuggestedBest11, handleFantasyTeamChange]);
-
-  // Function to reanalyze the modified team
-  const handleReanalyze = async () => {
-    setReanalyzing(true);
-    try {
-      const aiSuggestedTeamPlayers =
-        aiSuggestedTeam?.selectedPlayers as Player[];
-      const result = await analyzeTeam(fantasyTeam, aiSuggestedTeamPlayers);
-
-      if (result?.teamStats) {
-        setStats({
-          winProbability: result.teamStats.winProbability,
-          battingStrength: result.teamStats.battingStrength,
-          bowlingStrength: result.teamStats.bowlingStrength,
-          balanceRating: result.teamStats.balanceRating,
-        });
-        setNeedsReanalysis(false);
-      }
-    } catch (error) {
-      console.error("Failed to reanalyze team:", error);
-    } finally {
-      setReanalyzing(false);
-    }
-  };
 
   // Initialize team and stats on component mount
   useEffect(() => {
@@ -318,36 +342,122 @@ export function FantasyTeamSection({
       });
     } else {
       // Calculate stats based on the team composition
-      calculateAndSetStats(initialTeam);
+      handleReanalyze(initialTeam);
     }
-  }, [initialTeam, aiSuggestedTeam, calculateAndSetStats]);
+  }, [initialTeam, aiSuggestedTeam, handleReanalyze]);
 
   return (
-    <div className="grid md:grid-cols-7 gap-4 md:gap-6">
-      {/* Left section - Team Builder */}
-      <div className="md:col-span-4 space-y-4">
-        {/* Fantasy Team Builder */}
-        <FantasyTeamBuilder
-          allPlayers={allPlayers}
-          fantasyTeam={fantasyTeam}
-          onFantasyTeamChange={handleFantasyTeamChange}
-        />
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-7 gap-4 md:gap-6">
+        {/* Left section - Team Builder */}
+        <div className="md:col-span-4 space-y-4">
+          {/* Fantasy Team Builder */}
+          <FantasyTeamBuilder
+            allPlayers={allPlayers}
+            fantasyTeam={fantasyTeam}
+            onFantasyTeamChange={handleFantasyTeamChange}
+          />
 
-        {/* Mobile Stats & Analysis Section */}
-        <div className="block md:hidden space-y-4">
-          {/* Controls */}
+          {/* Mobile Stats & Analysis Section */}
+          <div className="block md:hidden space-y-4">
+            {/* Controls */}
+            <div className="flex justify-between items-center">
+              <TooltipProvider>
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={resetFantasyTeam}
+                      className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                      Reset Team
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="start">
+                    <p className="text-xs">
+                      Reset to a basic suggested team (not empty).
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {needsReanalysis && (
+                <Button
+                  onClick={() => handleReanalyze(fantasyTeam)}
+                  disabled={reanalyzing}
+                  className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-600 hover:to-blue-600"
+                >
+                  {reanalyzing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    "Analyze Team"
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {/* Credits Display */}
+            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Total Credits
+                </span>
+                <span
+                  className={`font-bold ${
+                    totalCredits > 100
+                      ? "text-red-500"
+                      : "text-gray-900 dark:text-gray-100"
+                  }`}
+                >
+                  {totalCredits.toFixed(1)}/100.0
+                </span>
+              </div>
+              <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    totalCredits > 100
+                      ? "bg-red-500"
+                      : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  }`}
+                  style={{ width: `${Math.min(totalCredits, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Mobile Performance Metrics */}
+            <TeamPerformanceMetrics
+              winProbability={stats.winProbability}
+              battingStrength={stats.battingStrength}
+              bowlingStrength={stats.bowlingStrength}
+              balanceRating={stats.balanceRating}
+            />
+
+            {/* Mobile Team Analysis */}
+            <TeamAnalysis
+              analysis={
+                aiSuggestedTeam?.teamAnalysis ||
+                "No analysis available yet. Select your team and click Analyze."
+              }
+              isLoading={reanalyzing}
+            />
+          </div>
+        </div>
+
+        {/* Right section - Stats & Controls (desktop only) */}
+        <div
+          className={cn(
+            "hidden md:block md:col-span-3 space-y-4 md:space-y-6",
+            reanalyzing && "blur-sm"
+          )}
+        >
+          {/* Desktop Controls */}
           <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={resetFantasyTeam}
-              className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              Reset Team
-            </Button>
             {needsReanalysis && (
               <Button
-                onClick={handleReanalyze}
+                onClick={() => handleReanalyze(fantasyTeam)}
                 disabled={reanalyzing}
                 className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-600 hover:to-blue-600"
               >
@@ -363,134 +473,53 @@ export function FantasyTeamSection({
             )}
           </div>
 
-          {/* Credits Display */}
-          <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Total Credits
-              </span>
-              <span
-                className={`font-bold ${
-                  totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
-                }`}
-              >
-                {totalCredits.toFixed(1)}/100.0
-              </span>
+          {/* Desktop Stats Section */}
+          <div className="space-y-4">
+            {/* Credits Display */}
+            <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Total Credits
+                </span>
+                <span
+                  className={`font-bold ${
+                    totalCredits > 100
+                      ? "text-red-500"
+                      : "text-gray-900 dark:text-gray-100"
+                  }`}
+                >
+                  {totalCredits.toFixed(1)}/100.0
+                </span>
+              </div>
+              <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    totalCredits > 100
+                      ? "bg-red-500"
+                      : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  }`}
+                  style={{ width: `${Math.min(totalCredits, 100)}%` }}
+                />
+              </div>
             </div>
-            <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${
-                  totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                }`}
-                style={{ width: `${Math.min(totalCredits, 100)}%` }}
-              />
-            </div>
+
+            {/* Desktop Performance Metrics */}
+            <TeamPerformanceMetrics
+              winProbability={stats.winProbability}
+              battingStrength={stats.battingStrength}
+              bowlingStrength={stats.bowlingStrength}
+              balanceRating={stats.balanceRating}
+            />
+
+            {/* Desktop Team Analysis */}
+            <TeamAnalysis
+              analysis={
+                aiSuggestedTeam?.teamAnalysis ||
+                "No analysis available yet. Select your team and click Analyze."
+              }
+              isLoading={reanalyzing}
+            />
           </div>
-
-          {/* Mobile Performance Metrics */}
-          <TeamPerformanceMetrics
-            winProbability={stats.winProbability}
-            battingStrength={stats.battingStrength}
-            bowlingStrength={stats.bowlingStrength}
-            balanceRating={stats.balanceRating}
-          />
-
-          {/* Mobile Team Analysis */}
-          <TeamAnalysis
-            analysis={
-              aiSuggestedTeam?.teamAnalysis ||
-              "No analysis available yet. Select your team and click Analyze."
-            }
-            isLoading={reanalyzing}
-          />
-        </div>
-      </div>
-
-      {/* Right section - Stats & Controls (desktop only) */}
-      <div
-        className={cn(
-          "hidden md:block md:col-span-3 space-y-4 md:space-y-6",
-          reanalyzing && "blur-sm"
-        )}
-      >
-        {/* Desktop Controls */}
-        <div className="flex justify-between items-center">
-          <Button
-            variant="outline"
-            onClick={resetFantasyTeam}
-            className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Reset Team
-          </Button>
-          {needsReanalysis && (
-            <Button
-              onClick={handleReanalyze}
-              disabled={reanalyzing}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-600 hover:to-blue-600"
-            >
-              {reanalyzing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                "Analyze Team"
-              )}
-            </Button>
-          )}
-        </div>
-
-        {/* Desktop Stats Section */}
-        <div className="space-y-4">
-          {/* Credits Display */}
-          <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/30">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Total Credits
-              </span>
-              <span
-                className={`font-bold ${
-                  totalCredits > 100
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
-                }`}
-              >
-                {totalCredits.toFixed(1)}/100.0
-              </span>
-            </div>
-            <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${
-                  totalCredits > 100
-                    ? "bg-red-500"
-                    : "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                }`}
-                style={{ width: `${Math.min(totalCredits, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Desktop Performance Metrics */}
-          <TeamPerformanceMetrics
-            winProbability={stats.winProbability}
-            battingStrength={stats.battingStrength}
-            bowlingStrength={stats.bowlingStrength}
-            balanceRating={stats.balanceRating}
-          />
-
-          {/* Desktop Team Analysis */}
-          <TeamAnalysis
-            analysis={
-              aiSuggestedTeam?.teamAnalysis ||
-              "No analysis available yet. Select your team and click Analyze."
-            }
-            isLoading={reanalyzing}
-          />
         </div>
       </div>
     </div>

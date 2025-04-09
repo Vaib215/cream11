@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Crown, Shield, Zap, Target, UserRound, Activity } from "lucide-react";
 import { PlayerDetails } from "@/types/player";
-import { PlayerImage } from "@/app/components/player-image";
+import { PlayerImage } from "@/components/player-image";
 
 interface MatchTeamsProps {
   teams: Record<

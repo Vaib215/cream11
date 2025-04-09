@@ -1,3 +1,5 @@
+import { Player, PlayerDetails } from "./player";
+
 export interface Match {
   home: string;
   away: string;
@@ -38,7 +40,7 @@ export interface MatchWithPlayers {
   teams: Record<
     string,
     {
-      players: any[];
+      players: Player[];
       color: string;
       secondaryColor: string;
       logo?: string;

@@ -1,5 +1,6 @@
 import teamsData from "@/data/ipl_2025_teams.json";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Player {
   name: string;
@@ -36,20 +37,23 @@ export default async function PlayersPage() {
   );
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">IPL 2025 Players</h1>
+    <div className="container mx-auto px-4 py-8">
+      <Link href="/" className="text-blue-500 hover:underline mb-4 block">
+        &larr; Back to Matches
+      </Link>
+      <h1 className="text-3xl font-bold mb-8 text-center">IPL 2024 Players</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {allPlayers.map((player, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Object.entries(teamsData).map(([teamName, teamData]) => (
           <div
-            key={index}
+            key={teamName}
             className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
-            style={{ borderTop: `4px solid ${player.teamColor}` }}
+            style={{ borderTop: `4px solid ${teamData.colors.color}` }}
           >
             <div className="relative h-48 w-full overflow-hidden">
               <Image
-                src={player.imageUrl}
-                alt={player.name}
+                src={teamData.logo}
+                alt={teamName}
                 width={100}
                 height={100}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -57,8 +61,14 @@ export default async function PlayersPage() {
               />
             </div>
             <div className="p-4">
-              <h3 className="font-semibold text-lg truncate">{player.name}</h3>
-              <p className="text-gray-600 text-sm">{player.team}</p>
+              <h3 className="font-semibold text-lg truncate">{teamName}</h3>
+              <ul className="list-disc list-inside">
+                {teamData.players.map((player, index) => (
+                  <li key={index} className="text-gray-600 text-sm">
+                    {player}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         ))}

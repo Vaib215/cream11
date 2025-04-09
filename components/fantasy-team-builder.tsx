@@ -33,19 +33,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Player } from "@/types/player";
-import { PlayerImage } from "@/app/components/player-image";
+import { PlayerImage } from "@/components/player-image";
 import { cn } from "@/lib/utils";
 
 interface FantasyTeamBuilderProps {
   allPlayers: Player[];
   fantasyTeam: Player[];
   onFantasyTeamChange: (team: Player[]) => void;
+  suggestedCaptain?: string;
+  suggestedViceCaptain?: string;
 }
 
 export function FantasyTeamBuilder({
   allPlayers,
   fantasyTeam,
   onFantasyTeamChange,
+  suggestedCaptain,
+  suggestedViceCaptain,
 }: FantasyTeamBuilderProps) {
   const [open, setOpen] = useState(false);
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
@@ -187,6 +191,10 @@ export function FantasyTeamBuilder({
                     onDragEnd={handleDragEnd}
                     onCaptainSelect={handleCaptainSelection}
                     onViceCaptainSelect={handleViceCaptainSelection}
+                    isSuggestedCaptain={player.name === suggestedCaptain}
+                    isSuggestedViceCaptain={
+                      player.name === suggestedViceCaptain
+                    }
                   />
                 ))}
               </div>
@@ -208,6 +216,10 @@ export function FantasyTeamBuilder({
                     onDragEnd={handleDragEnd}
                     onCaptainSelect={handleCaptainSelection}
                     onViceCaptainSelect={handleViceCaptainSelection}
+                    isSuggestedCaptain={player.name === suggestedCaptain}
+                    isSuggestedViceCaptain={
+                      player.name === suggestedViceCaptain
+                    }
                   />
                 ))}
               </div>
@@ -229,6 +241,10 @@ export function FantasyTeamBuilder({
                     onDragEnd={handleDragEnd}
                     onCaptainSelect={handleCaptainSelection}
                     onViceCaptainSelect={handleViceCaptainSelection}
+                    isSuggestedCaptain={player.name === suggestedCaptain}
+                    isSuggestedViceCaptain={
+                      player.name === suggestedViceCaptain
+                    }
                   />
                 ))}
               </div>
@@ -250,6 +266,10 @@ export function FantasyTeamBuilder({
                     onDragEnd={handleDragEnd}
                     onCaptainSelect={handleCaptainSelection}
                     onViceCaptainSelect={handleViceCaptainSelection}
+                    isSuggestedCaptain={player.name === suggestedCaptain}
+                    isSuggestedViceCaptain={
+                      player.name === suggestedViceCaptain
+                    }
                   />
                 ))}
               </div>
@@ -380,6 +400,8 @@ export function FantasyTeamBuilder({
                 //@ts-expect-error - This is a workaround to prevent the drag and drop from working on mobile devices
                 onDragEnd={"ontouchstart" in window ? undefined : handleDragEnd}
                 onClick={() => handleSelect(player)}
+                isSuggestedCaptain={player.name === suggestedCaptain}
+                isSuggestedViceCaptain={player.name === suggestedViceCaptain}
               />
             ))}
             {availablePlayers.length > 12 && (
@@ -406,6 +428,8 @@ interface EnhancedPlayerCardProps {
   isAvailable?: boolean;
   onCaptainSelect?: (playerName: string) => void;
   onViceCaptainSelect?: (playerName: string) => void;
+  isSuggestedCaptain?: boolean;
+  isSuggestedViceCaptain?: boolean;
 }
 
 function EnhancedPlayerCard({
@@ -417,6 +441,8 @@ function EnhancedPlayerCard({
   isAvailable = false,
   onCaptainSelect,
   onViceCaptainSelect,
+  isSuggestedCaptain,
+  isSuggestedViceCaptain,
 }: EnhancedPlayerCardProps) {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -435,39 +461,60 @@ function EnhancedPlayerCard({
       } bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${
         onClick ? "cursor-pointer active:scale-95" : ""
       } ${isPressed ? "scale-95" : ""} ${isAvailable ? "hover:shadow-md" : ""}`}
+      style={{
+        borderLeft: player.teamColor ? `3px solid ${player.teamColor}` : "",
+      }}
     >
       {/* Player Image */}
-      <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+      <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
         <PlayerImage
           src={player.imageUrl || "/players/default-headshot.webp"}
           alt={player.name}
-          size={isAvailable ? 30 : 40}
+          size={isAvailable ? 36 : 46}
         />
         {player.isCaptain && (
-          <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5">
-            <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-yellow-800" />
+          <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm">
+            <Crown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-yellow-800" />
           </div>
         )}
         {player.isViceCaptain && (
-          <div className="absolute -top-1 -right-1 bg-gray-400 rounded-full p-0.5">
-            <Crown className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-800" />
+          <div className="absolute -top-1 -right-1 bg-gray-400 rounded-full p-0.5 shadow-sm">
+            <Crown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-800" />
           </div>
         )}
       </div>
 
       {/* Player Info */}
       <div className="ml-3 flex-grow min-w-0">
-        <h3 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-          {player.name}
-        </h3>
-        <div className="flex items-center justify-between mt-0.5">
-          <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-            {player.team}
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-semibold truncate text-gray-800 dark:text-gray-200">
+            {player.name}
           </p>
+          {isSuggestedCaptain && (
+            <span className="text-[9px] font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-1.5 py-0.5 rounded-full">
+              AI C
+            </span>
+          )}
+          {isSuggestedViceCaptain && (
+            <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">
+              AI VC
+            </span>
+          )}
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center">
+            <div
+              className="h-2.5 w-2.5 rounded-full mr-1.5"
+              style={{ backgroundColor: player.teamColor || "#333" }}
+            ></div>
+            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+              {player.team}
+            </p>
+          </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center text-[10px] sm:text-xs font-medium text-amber-600 dark:text-amber-400 cursor-help">
+                <div className="flex items-center text-xs font-medium text-amber-600 dark:text-amber-400 cursor-help px-1.5 py-0.5 bg-amber-50 dark:bg-amber-900/20 rounded-full">
                   <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
                   {player.credits}
                 </div>

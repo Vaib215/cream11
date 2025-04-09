@@ -6,12 +6,13 @@ import teamsData from "@/data/ipl_2025_teams.json";
 import { MatchFantasySelector } from "@/components/match-fantasy-selector";
 import { getPlaying11OfTeams, getCream11 } from "@/lib/gemini";
 import { unstable_cache } from "next/cache";
-import { PlayerDetails } from "@/types/player";
+import { Player } from "@/types/player";
 import { getPlayersCredits } from "@/lib/my11circle";
 import { FeedbackModal } from "@/components/feedback-modal";
 import { HowToUseGuide } from "@/components/how-to-use-guide";
+import { MatchWithPlayers } from "@/types/match";
 
-export const revalidate = 10800; // 3 hours (3600 * 3)
+export const revalidate = 60; // Revalidate page data every 60 seconds
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -23,37 +24,6 @@ interface Match {
   start: string;
   venue: string;
   gameday_id: number;
-}
-
-interface MatchWithPlayers {
-  id: string;
-  home: string;
-  away: string;
-  teams: Record<
-    string,
-    {
-      players: (PlayerDetails & { imageUrl: string })[];
-      color: string;
-      secondaryColor: string;
-      logo?: string;
-    }
-  >;
-  venue: string;
-  startTime: string;
-  date: string;
-  aiSuggestedTeam?: {
-    selectedPlayers: any[];
-    totalCredits: number;
-    captain: string;
-    viceCaptain: string;
-    teamStats: {
-      winProbability: number;
-      battingStrength: number;
-      bowlingStrength: number;
-      balanceRating: number;
-    };
-    teamAnalysis: string;
-  };
 }
 
 async function getPlayersData(match: Match) {
@@ -74,6 +44,9 @@ async function getPlayersData(match: Match) {
     !playersData?.[match.home]?.length ||
     !playersData?.[match.away]?.length
   ) {
+    console.warn(
+      `[getPlayersData] Playing XI data incomplete/missing for ${match.home} vs ${match.away}. Falling back to static team data. This might be outdated.`
+    );
     const homeTeam = (teamsData as any)[match.home];
     const awayTeam = (teamsData as any)[match.away];
 
@@ -159,7 +132,7 @@ const getAISuggestedTeamCached = unstable_cache(
   (match: any) => [
     `ai-team-${match.home}-${match.away}-${match.date}-${match.start}`,
   ],
-  { revalidate: 3600 } // 1 hour
+  { revalidate: 300 } // Revalidate AI suggestion cache every 5 minutes (300 seconds)
 );
 
 export default async function Home() {
@@ -185,19 +158,14 @@ export default async function Home() {
           [match.home]: {
             players: playersData[match.home].map((player) => ({
               ...player,
-              credits: player.credits || 9.0,
-              imageUrl: `/players/${player?.name
+              imageUrl: `/players/${player.name
                 ?.toLowerCase()
                 ?.replace(/[\s-]+/g, "_")
                 ?.replaceAll(".", "")}.webp`,
-              isImpactPlayer: player.isImpactPlayer || false,
-              isCaptain: player.isCaptain || false,
-              isViceCaptain: player.isViceCaptain || false,
-              role: player.role || "BATTER",
               team: match.home,
               teamColor:
                 (teamsData as any)[match.home]?.colors?.color || "#333333",
-            })),
+            })) as Player[],
             color: (teamsData as any)[match.home]?.colors?.color || "#333333",
             secondaryColor:
               (teamsData as any)[match.home]?.colors?.secondaryColor ||
@@ -207,19 +175,14 @@ export default async function Home() {
           [match.away]: {
             players: playersData[match.away].map((player) => ({
               ...player,
-              credits: player.credits || 9.0,
               imageUrl: `/players/${player.name
                 ?.toLowerCase()
                 ?.replace(/[\s-]+/g, "_")
                 ?.replaceAll(".", "")}.webp`,
-              isImpactPlayer: player.isImpactPlayer || false,
-              isCaptain: player.isCaptain || false,
-              isViceCaptain: player.isViceCaptain || false,
-              role: player.role || "BATTER",
               team: match.away,
               teamColor:
                 (teamsData as any)[match.away]?.colors?.color || "#333333",
-            })),
+            })) as Player[],
             color: (teamsData as any)[match.away]?.colors?.color || "#333333",
             secondaryColor:
               (teamsData as any)[match.away]?.colors?.secondaryColor ||
@@ -249,55 +212,20 @@ export default async function Home() {
                 AI-Powered Fantasy Cricket Team Builder
               </p>
               <div className="flex items-center gap-2 mt-1 sm:mt-0">
-                <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-indigo-600/30 text-indigo-200">
-                  IPL 2025
+                <span className="text-xs font-medium text-indigo-200 bg-indigo-600 px-2 py-0.5 rounded-full">
+                  IPL 2024
                 </span>
-                <HowToUseGuide />
+                <div className="flex items-center space-x-4">
+                  <HowToUseGuide />
+                  <FeedbackModal />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
-        <div className="grid gap-8">
-          {matchesWithPlayers.map((match) => (
-            <div
-              key={match.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700"
-            >
-              <MatchFantasySelector match={match} />
-            </div>
-          ))}
-          {matchesWithPlayers.length === 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-700">
-              <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-indigo-600 dark:text-indigo-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                No matches scheduled for today
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                Check back later for upcoming matches. You can still view
-                previous match results in the history section.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+      <MatchFantasySelector allMatchesData={matchesWithPlayers} />
 
       {/* Footer */}
       <footer className="bg-gray-800 relative z-40 dark:bg-gray-900 text-white mt-auto">

@@ -111,7 +111,62 @@ export const getCream11 = unstable_cache(
           2. Never suggest players from other teams.
           3. Validate all player names against the provided list.
           4. Reject any players not in the provided roster.
-          5. Use the Google Search tool to find the most recent player statistics for the current season to supplement the historical data.`,
+          5. Use the Google Search tool to find the most recent player statistics for the current season to supplement the historical data.
+          
+          **TOSS FACTOR:** Use Google Search to determine typical pitch behavior and toss impact at ${match.venue}. Factor this into your player selection and analysis (e.g., if dew makes batting second easier, favor players accordingly). Mention the assumed toss impact in your analysis.
+          
+          **CRITICAL TEAM COMPOSITION RULES:**
+          The total sum of credits must be under 100.
+          Make sure to include at least:
+          - 1 wicketkeeper
+          - 1 all-rounder
+          - 3-5 batters
+          - 3-5 bowlers
+          **- Maximum of 7 players can be selected from a single team (${match.home} or ${match.away}).**
+          
+          Also suggest a captain (2x points) and vice-captain (1.5x points) from the selected players.
+          IMPORTANT: Choose the captain and vice-captain based on their potential to score the most fantasy points (considering both history and recent form), NOT based on their real-life leadership roles. Captain should be your highest potential point-scoring player, and vice-captain should be your second-highest scoring potential player.
+          
+          Base your selections on a combination of historical data and **current season performance (found via search)**. Use specific statistics (historical and recent) to justify each selection.
+          
+          Provide a detailed team analysis that evaluates:
+          1. Each selected player individually with key historical and **recent** statistics (batting averages, strike rates, economy rates, wickets, etc.).
+          2. Recent form analysis using data obtained from search.
+          3. Detailed statistical justification for captain and vice-captain choices, referencing both historical and recent data.
+          4. Overall team balance and strategy with quantitative assessment.
+          
+          Also provide team stats with the following values:
+          - winProbability: a number between 0-100 representing the team's chance of winning based on selected players' form and history.
+          - battingStrength: a number between 0-100 representing the team's batting quality.
+          - bowlingStrength: a number between 0-100 representing the team's bowling quality.
+          - balanceRating: a number between 0-100 representing how well-balanced the team is.
+          **Ensure these stats are dynamically calculated based on the specific players selected and their recent/historical data, not static placeholders.**
+          
+          Respond ONLY with a valid JSON object in this exact format:
+          {
+            "selectedPlayers": [
+              {
+                "name": "Player Name",
+                "role": "ROLE",
+                "team": "Team Name",
+                "credits": 8.5, // Ensure credits are numbers
+                "isCaptain": false,
+                "isViceCaptain": false
+              }
+              // ... other players
+            ],
+            "totalCredits": 99.5, // Ensure total credits is a number
+            "captain": "Player Name",
+            "viceCaptain": "Player Name",
+            "teamAnalysis": "Detailed analysis...",
+            "teamStats": {
+              "winProbability": 75, // Number
+              "battingStrength": 80, // Number
+              "bowlingStrength": 70, // Number
+              "balanceRating": 85 // Number
+            }
+          }
+        `,
         });
         const { response } = await model.generateContent({
           contents: [
@@ -119,73 +174,77 @@ export const getCream11 = unstable_cache(
               role: "user",
               parts: [
                 {
-                  text: `
-                  I'm building a fantasy cricket team for a match between ${
+                  text: `I'm building a fantasy cricket team for a match between ${
                     match.home
                   } and ${match.away}.
-                  Here are all the available players with their roles, credits, and historical data:
-                  
-                  ${JSON.stringify(playersWithCredits, null, 2)}
-                  
-                  Select the best 11 players that will score the most fantasy points. 
-                  **Use Google Search to find the latest statistics for each player in the current season.**
-                  Consider both the provided historical data AND the recent stats found via search. Prioritize players in good recent form.
-                  
-                  The total sum of credits must be under 100.
-                  Make sure to include at least:
-                  - 1 wicketkeeper
-                  - 1 all-rounder
-                  - 3-5 batters
-                  - 3-5 bowlers
-                  
-                  Also suggest a captain (2x points) and vice-captain (1.5x points) from the selected players.
-                  IMPORTANT: Choose the captain and vice-captain based on their potential to score the most fantasy points (considering both history and recent form), NOT based on their real-life leadership roles. Captain should be your highest potential point-scoring player, and vice-captain should be your second-highest scoring potential player.
-                  
-                  Base your selections on a combination of historical data and **current season performance (found via search)**. Use specific statistics (historical and recent) to justify each selection.
-                  
-                  Provide a detailed team analysis that evaluates:
-                  1. Each selected player individually with key historical and **recent** statistics (batting averages, strike rates, economy rates, wickets, etc.).
-                  2. Recent form analysis using data obtained from search.
-                  3. Detailed statistical justification for captain and vice-captain choices, referencing both historical and recent data.
-                  4. Overall team balance and strategy with quantitative assessment.
-                  
-                  Also provide team stats with the following values:
-                  - winProbability: a number between 0-100 representing the team's chance of winning based on selected players' form and history.
-                  - battingStrength: a number between 0-100 representing the team's batting quality.
-                  - bowlingStrength: a number between 0-100 representing the team's bowling quality.
-                  - balanceRating: a number between 0-100 representing how well-balanced the team is.
-                  
-                  Respond ONLY with a valid JSON object in this exact format:
-                  {
-                    "selectedPlayers": [
-                      {
-                        "name": "Player Name",
-                        "role": "ROLE",
-                        "team": "Team Name",
-                        "credits": 8.5, // Ensure credits are numbers
-                        "isCaptain": false,
-                        "isViceCaptain": false
-                      }
-                      // ... other players
-                    ],
-                    "totalCredits": 99.5, // Ensure total credits is a number
-                    "captain": "Player Name",
-                    "viceCaptain": "Player Name",
-                    "teamAnalysis": "Detailed analysis...",
-                    "teamStats": {
-                      "winProbability": 75, // Number
-                      "battingStrength": 80, // Number
-                      "bowlingStrength": 70, // Number
-                      "balanceRating": 85 // Number
-                    }
-                  }
-                `,
+Here are all the available players with their roles, credits, and historical data:
+
+${JSON.stringify(playersWithCredits, null, 2)}
+
+**TOSS FACTOR:** Use Google Search to determine typical pitch behavior and toss impact at ${
+                    match.venue
+                  }. Factor this into your player selection and analysis (e.g., if dew makes batting second easier, favor players accordingly). Mention the assumed toss impact in your analysis.
+
+Select the best 11 players that will score the most fantasy points. 
+**Use Google Search to find the latest statistics for each player in the current season.**
+Consider both the provided historical data AND the recent stats found via search. Prioritize players in good recent form.
+
+**CRITICAL TEAM COMPOSITION RULES:**
+The total sum of credits must be under 100.
+Make sure to include at least:
+- 1 wicketkeeper
+- 1 all-rounder
+- 3-5 batters
+- 3-5 bowlers
+**- Maximum of 7 players can be selected from a single team (${match.home} or ${
+                    match.away
+                  }).**
+
+Also suggest a captain (2x points) and vice-captain (1.5x points) from the selected players.
+IMPORTANT: Choose the captain and vice-captain based on their potential to score the most fantasy points (considering both history and recent form), NOT based on their real-life leadership roles. Captain should be your highest potential point-scoring player, and vice-captain should be your second-highest scoring potential player.
+
+Base your selections on a combination of historical data and **current season performance (found via search)**. Use specific statistics (historical and recent) to justify each selection.
+
+Provide a detailed team analysis that evaluates:
+1. Each selected player individually with key historical and **recent** statistics (batting averages, strike rates, economy rates, wickets, etc.).
+2. Recent form analysis using data obtained from search.
+3. Detailed statistical justification for captain and vice-captain choices, referencing both historical and recent data.
+4. Overall team balance and strategy with quantitative assessment.
+
+Also provide team stats with the following values:
+- winProbability: a number between 0-100 representing the team's chance of winning based on selected players' form and history.
+- battingStrength: a number between 0-100 representing the team's batting quality.
+- bowlingStrength: a number between 0-100 representing the team's bowling quality.
+- balanceRating: a number between 0-100 representing how well-balanced the team is.
+**Ensure these stats are dynamically calculated based on the specific players selected and their recent/historical data, not static placeholders.**
+
+Respond ONLY with a valid JSON object in this exact format:
+{
+  "selectedPlayers": [
+    {
+      "name": "Player Name",
+      "role": "ROLE",
+      "team": "Team Name",
+      "credits": 8.5,
+      "isCaptain": false,
+      "isViceCaptain": false
+    }
+  ],
+  "totalCredits": 99.5,
+  "captain": "Player Name",
+  "viceCaptain": "Player Name",
+  "teamAnalysis": "Detailed analysis...",
+  "teamStats": {
+    "winProbability": 75,
+    "battingStrength": 80,
+    "bowlingStrength": 70,
+    "balanceRating": 85
+  }
+}`,
                 },
               ],
             },
           ],
-          // Enable grounding explicitly if needed by the SDK version, otherwise the tool config handles it.
-          // generationConfig: { groundingConfig: { sources: [{ id: 'googleSearch' }] } } // Example, adjust based on actual SDK usage if required
         });
 
         // Parse and structure the response
@@ -217,7 +276,7 @@ export const getCream11 = unstable_cache(
                 teamAnalysis:
                   "Team analysis will be available after selection.",
                 teamStats: {
-                  winProbability: 50,
+                  winProbability: 0,
                   battingStrength: 60,
                   bowlingStrength: 60,
                   balanceRating: 55,
@@ -233,7 +292,7 @@ export const getCream11 = unstable_cache(
               viceCaptain: "",
               teamAnalysis: "Team analysis will be available after selection.",
               teamStats: {
-                winProbability: 50,
+                winProbability: 0,
                 battingStrength: 60,
                 bowlingStrength: 60,
                 balanceRating: 55,
@@ -244,7 +303,7 @@ export const getCream11 = unstable_cache(
           // Ensure teamStats exists
           if (!result.teamStats) {
             result.teamStats = {
-              winProbability: 50,
+              winProbability: 0,
               battingStrength: 60,
               bowlingStrength: 60,
               balanceRating: 55,
@@ -284,7 +343,7 @@ export const getCream11 = unstable_cache(
             viceCaptain: "",
             teamAnalysis: "Team analysis will be available after selection.",
             teamStats: {
-              winProbability: 50,
+              winProbability: 0,
               battingStrength: 60,
               bowlingStrength: 60,
               balanceRating: 55,
@@ -301,7 +360,7 @@ export const getCream11 = unstable_cache(
           viceCaptain: "",
           teamAnalysis: "Team analysis will be available after selection.",
           teamStats: {
-            winProbability: 50,
+            winProbability: 0,
             battingStrength: 60,
             bowlingStrength: 60,
             balanceRating: 55,
@@ -444,35 +503,69 @@ export const getCustomTeamAnalysis = unstable_cache(
 
         // Parse and return the AI's analysis
         let responseText = "";
+        let jsonStr = ""; // Declare outside try block
+        let cleanedJson = ""; // Declare outside try block
         try {
           responseText = response.text();
+          console.log("Raw AI Response Text:", responseText); // Added for debugging
           const jsonMatch =
             responseText.match(/```json\n([\s\S]*?)\n```/) ||
             responseText.match(/{[\s\S]*?}/);
 
           if (!jsonMatch) {
             console.error(
-              "Failed JSON extraction. Raw response:",
+              "Failed JSON extraction. Could not find JSON block in raw response:",
               responseText
             );
             throw new Error("Could not extract JSON from response");
           }
 
-          const jsonStr = jsonMatch[0].startsWith("{")
-            ? jsonMatch[0]
-            : jsonMatch[1];
+          jsonStr = jsonMatch[0].startsWith("{") ? jsonMatch[0] : jsonMatch[1];
 
-          // Add additional JSON cleanup
-          const cleanedJson = jsonStr
-            .replace(/\\/g, "")
-            .replace(/(\w+):/g, '"$1":')
-            .replace(/'/g, '"');
+          console.log("Extracted JSON String:", jsonStr); // Added for debugging
 
-          return JSON.parse(cleanedJson);
+          // Add additional JSON cleanup (Attempting cleanup, might be fragile)
+          // Consider more robust JSON parsing if this fails often
+          cleanedJson = jsonStr
+            .replace(/\\/g, "") // Basic backslash removal
+            // Simple attempt to quote keys, might break with complex strings
+            // .replace(/(\s*"?[\w]+"?\s*):/g, '"$1":')
+            // Safer not to aggressively clean keys, rely on model format
+            .replace(/'/g, '"'); // Replace single quotes
+
+          console.log("Cleaned JSON String (attempted):", cleanedJson); // Added for debugging
+
+          const parsedResult = JSON.parse(cleanedJson);
+
+          // Check if teamAnalysis is empty or missing
+          if (!parsedResult.teamAnalysis || !parsedResult.teamAnalysis.trim()) {
+            console.warn(
+              "AI returned valid JSON but with empty teamAnalysis. Setting default message."
+            );
+            parsedResult.teamAnalysis =
+              "AI analysis could not be generated for this specific team configuration. Please ensure your team selection is valid.";
+          }
+
+          // Ensure teamStats exists, provide defaults if not
+          if (!parsedResult.teamStats) {
+            console.warn(
+              "AI returned valid JSON but missing teamStats. Setting default stats."
+            );
+            parsedResult.teamStats = {
+              winProbability: 0,
+              battingStrength: 0,
+              bowlingStrength: 0,
+              balanceRating: 0,
+            };
+          }
+
+          return parsedResult;
         } catch (error) {
           console.error("Failed to parse AI response:", {
             error,
             responseText,
+            extractedJsonString: jsonStr, // Log extracted string (will be empty if extraction failed)
+            cleanedJsonString: cleanedJson, // Log cleaned string (will be empty if cleaning/parsing failed before this)
           });
           throw new Error(
             "Failed to analyze team. Please check your selections."
