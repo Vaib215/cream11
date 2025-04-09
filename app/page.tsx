@@ -213,7 +213,7 @@ export default async function Home() {
               </p>
               <div className="flex items-center gap-2 mt-1 sm:mt-0">
                 <span className="text-xs font-medium text-indigo-200 bg-indigo-600 px-2 py-0.5 rounded-full">
-                  IPL 2024
+                  IPL 2025
                 </span>
                 <div className="flex items-center space-x-4">
                   <HowToUseGuide />
