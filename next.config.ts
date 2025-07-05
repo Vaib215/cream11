@@ -7,6 +7,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "documents.iplt20.com",
       },
+      {
+        protocol: "https",
+        hostname: "g.cricapi.com"
+      },
+      {
+        protocol: "https",
+        hostname: "h.cricapi.com"
+      },
+      {
+        protocol: "https",
+        hostname: "images.sportdevs.com"
+      }
     ],
   },
   async rewrites() {
@@ -22,6 +34,10 @@ const nextConfig: NextConfig = {
       {
         source: "/ingest/decide",
         destination: "https://eu.i.posthog.com/decide",
+      },
+      {
+        destination: "https://g.cricapi.com",
+        source: "/api/cricket/:path*",
       }
     ];
   },

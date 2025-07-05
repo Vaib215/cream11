@@ -11,6 +11,8 @@ import { getPlayersCredits } from "@/lib/my11circle";
 import { FeedbackModal } from "@/components/feedback-modal";
 import { HowToUseGuide } from "@/components/how-to-use-guide";
 import { MatchWithPlayers } from "@/types/match";
+import { CricketMatchList } from "@/components/cricket-match-list";
+import { CricketService } from "@/lib/cricket";
 
 export const revalidate = 60; // Revalidate page data every 60 seconds
 
@@ -136,115 +138,23 @@ const getAISuggestedTeamCached = unstable_cache(
 );
 
 export default async function Home() {
-  const todaysMatches = matchesSchedule.matches.filter((match) => {
-    const matchDate = dayjs.tz(
-      `${match.date} ${match.start}`,
-      "DD-MMM-YY h:mm A",
-      "Asia/Kolkata"
-    );
-    const nowInKolkata = dayjs().tz("Asia/Kolkata");
-    return matchDate.isSame(nowInKolkata, "day");
-  });
-
-  const matchesWithPlayers: MatchWithPlayers[] = await Promise.all(
-    todaysMatches.map(async (match) => {
-      const playersData = await getPlayersData(match);
-      const aiSuggestedTeam = await getAISuggestedTeamCached(match);
-      return {
-        id: `${match.home}-${match.away}-${match.date}`,
-        home: match.home,
-        away: match.away,
-        teams: {
-          [match.home]: {
-            players: playersData[match.home].map((player) => ({
-              ...player,
-              imageUrl: `/players/${player.name
-                ?.toLowerCase()
-                ?.replace(/[\s-]+/g, "_")
-                ?.replaceAll(".", "")}.webp`,
-              team: match.home,
-              teamColor:
-                (teamsData as any)[match.home]?.colors?.color || "#333333",
-            })) as Player[],
-            color: (teamsData as any)[match.home]?.colors?.color || "#333333",
-            secondaryColor:
-              (teamsData as any)[match.home]?.colors?.secondaryColor ||
-              "#CCCCCC",
-            logo: (teamsData as any)[match.home]?.logo || "",
-          },
-          [match.away]: {
-            players: playersData[match.away].map((player) => ({
-              ...player,
-              imageUrl: `/players/${player.name
-                ?.toLowerCase()
-                ?.replace(/[\s-]+/g, "_")
-                ?.replaceAll(".", "")}.webp`,
-              team: match.away,
-              teamColor:
-                (teamsData as any)[match.away]?.colors?.color || "#333333",
-            })) as Player[],
-            color: (teamsData as any)[match.away]?.colors?.color || "#333333",
-            secondaryColor:
-              (teamsData as any)[match.away]?.colors?.secondaryColor ||
-              "#CCCCCC",
-            logo: (teamsData as any)[match.away]?.logo || "",
-          },
-        },
-        venue: match.venue,
-        startTime: match.start,
-        date: match.date,
-        aiSuggestedTeam,
-      };
-    })
-  );
+  const cricketService = CricketService.getInstance();
+  const upcomingMatches = await cricketService.getUpcomingMatches();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-indigo-950">
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-indigo-700 to-purple-700 shadow-md">
-        <div className="container mx-auto px-4 py-3 md:py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center">
-              <span className="text-orange-400">Cream</span>
-              <span className="text-white">11</span>
-            </h1>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-              <p className="text-xs sm:text-sm md:text-base text-indigo-200">
-                AI-Powered Fantasy Cricket Team Builder
-              </p>
-              <div className="flex items-center gap-2 mt-1 sm:mt-0">
-                <span className="text-xs font-medium text-indigo-200 bg-indigo-600 px-2 py-0.5 rounded-full">
-                  IPL 2025
-                </span>
-                <div className="flex items-center space-x-4">
-                  <HowToUseGuide />
-                  <FeedbackModal />
-                </div>
-              </div>
-            </div>
-          </div>
+    <main className="min-h-screen p-4">
+      <div className="container mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Cricket Live</h1>
+
+        <div className="mb-8">
+          <CricketMatchList initialMatches={upcomingMatches} />
         </div>
-      </header>
 
-      <MatchFantasySelector allMatchesData={matchesWithPlayers} />
-
-      {/* Footer */}
-      <footer className="bg-gray-800 relative z-40 dark:bg-gray-900 text-white mt-auto">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-300">
-              © {new Date().getFullYear()} Cream11 - Fantasy Cricket Assistant
-            </p>
-            <div className="mt-4 md:mt-0">
-              <p className="text-xs text-gray-400">
-                Not affiliated with any official cricket league or organization
-              </p>
-            </div>
-          </div>
+        <div className="fixed bottom-4 right-4 flex gap-2">
+          <FeedbackModal />
+          <HowToUseGuide />
         </div>
-      </footer>
-
-      {/* Feedback Component */}
-      <FeedbackModal />
+      </div>
     </main>
   );
 }
