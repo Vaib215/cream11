@@ -1,4 +1,5 @@
 import WetPaintButton from "../ui/wet-button";
+import SportsDialog from "./select-sports";
 
 function CTA() {
     return (
@@ -15,7 +16,9 @@ function CTA() {
                             is to streamline SMB trade, making it easier and faster than ever.
                         </p>
                     </div>
-                    <WetPaintButton className="bg-red-500 cursor-pointer hover:scale-125 duration-300 transition-all px-8 py-4 text-3xl">Get Started</WetPaintButton>
+                    <SportsDialog>
+                        <WetPaintButton className="bg-red-500 cursor-pointer hover:scale-125 duration-300 transition-all px-8 py-4 text-3xl">Get Started</WetPaintButton>
+                    </SportsDialog>
                 </div>
             </div>
         </div>

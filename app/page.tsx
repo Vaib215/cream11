@@ -11,7 +11,6 @@ export default function LandingPage() {
                 title2="Start CHEATING" />
             <Features />
             <CTA />
-
             <Footer />
         </div>
     )

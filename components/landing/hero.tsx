@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Circle } from "lucide-react";
 import WetPaintButton from "../ui/wet-button";
+import SportsDialog from "./select-sports";
 
 function CricketBat({ className }: { className?: string }) {
     return (
@@ -233,7 +234,9 @@ export function HeroGeometric({
                             </span>
                         </h1>
 
-                        <WetPaintButton className="bg-red-500 cursor-pointer hover:scale-125 duration-300 transition-all text-xl md:text-3xl md:px-8 md:py-4">Get Started</WetPaintButton>
+                        <SportsDialog>
+                            <WetPaintButton className="bg-red-500 cursor-pointer hover:scale-125 duration-300 transition-all text-xl md:text-3xl md:px-8 md:py-4">Get Started</WetPaintButton>
+                        </SportsDialog>
                     </motion.div>
                 </div>
             </div>
