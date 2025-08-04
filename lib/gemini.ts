@@ -22,7 +22,7 @@ function isRateLimited(error: unknown) {
   );
 }
 
-async function withKeyRotation<T>(
+export async function withKeyRotation<T>(
   fn: (genAI: GoogleGenerativeAI) => Promise<T>
 ): Promise<T> {
   const attempts = new Set<number>();
@@ -174,16 +174,14 @@ export const getCream11 = unstable_cache(
               role: "user",
               parts: [
                 {
-                  text: `I'm building a fantasy cricket team for a match between ${
-                    match.home
-                  } and ${match.away}.
+                  text: `I'm building a fantasy cricket team for a match between ${match.home
+                    } and ${match.away}.
 Here are all the available players with their roles, credits, and historical data:
 
 ${JSON.stringify(playersWithCredits, null, 2)}
 
-**TOSS FACTOR:** Use Google Search to determine typical pitch behavior and toss impact at ${
-                    match.venue
-                  }. Factor this into your player selection and analysis (e.g., if dew makes batting second easier, favor players accordingly). Mention the assumed toss impact in your analysis.
+**TOSS FACTOR:** Use Google Search to determine typical pitch behavior and toss impact at ${match.venue
+                    }. Factor this into your player selection and analysis (e.g., if dew makes batting second easier, favor players accordingly). Mention the assumed toss impact in your analysis.
 
 Select the best 11 players that will score the most fantasy points. 
 **Use Google Search to find the latest statistics for each player in the current season.**
@@ -196,9 +194,8 @@ Make sure to include at least:
 - 1 all-rounder
 - 3-5 batters
 - 3-5 bowlers
-**- Maximum of 7 players can be selected from a single team (${match.home} or ${
-                    match.away
-                  }).**
+**- Maximum of 7 players can be selected from a single team (${match.home} or ${match.away
+                    }).**
 
 Also suggest a captain (2x points) and vice-captain (1.5x points) from the selected players.
 IMPORTANT: Choose the captain and vice-captain based on their potential to score the most fantasy points (considering both history and recent form), NOT based on their real-life leadership roles. Captain should be your highest potential point-scoring player, and vice-captain should be your second-highest scoring potential player.
@@ -439,9 +436,8 @@ export const getCustomTeamAnalysis = unstable_cache(
               parts: [
                 {
                   text: `
-                  Analyze this user-selected fantasy cricket team for the ${
-                    match.home
-                  } vs ${match.away} match.
+                  Analyze this user-selected fantasy cricket team for the ${match.home
+                    } vs ${match.away} match.
 
                   COMPLETE HISTORICAL DATA & CREDITS OF ALL AVAILABLE PLAYERS:
                   ${JSON.stringify(allPlayersWithHistory, null, 2)}
@@ -473,12 +469,10 @@ export const getCustomTeamAnalysis = unstable_cache(
                       (sum, p) => sum + p.credits,
                       0
                     )}, // Calculate actual credits
-                    "captain": "${
-                      selectedPlayers.find((p) => p.isCaptain)?.name || "N/A"
+                    "captain": "${selectedPlayers.find((p) => p.isCaptain)?.name || "N/A"
                     }",
-                    "viceCaptain": "${
-                      selectedPlayers.find((p) => p.isViceCaptain)?.name ||
-                      "N/A"
+                    "viceCaptain": "${selectedPlayers.find((p) => p.isViceCaptain)?.name ||
+                    "N/A"
                     }",
                     "teamAnalysis": "Detailed player-by-player analysis integrating historical and recent (searched) data, justification for stats...",
                     "teamStats": {
