@@ -34,7 +34,7 @@ export function Features() {
                                 </div>
                                 <div className="relative z-10 mt-6 space-y-2 text-center">
                                     <h2 className="group-hover:text-secondary-950 text-lg font-medium transition dark:text-white">Strategic Insights</h2>
-                                    <p className="text-foreground">Get detailed match analysis and player recommendations to maximize your team's potential</p>
+                                    <p className="text-foreground">Get detailed match analysis and player recommendations to maximize your team&apos;s potential</p>
                                 </div>
                             </CardContent>
                         </Card>
