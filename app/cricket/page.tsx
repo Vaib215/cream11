@@ -38,7 +38,7 @@ export default async function Home() {
         <h1 className="text-3xl font-bold mb-8">Cricket Live</h1>
 
         <div className="grid md:grid-cols-4 gap-4">
-          {upcomingMatches.map((match) => (
+          {upcomingMatches?.map((match) => (
             <CricketCard key={match.id} match={match} />
           ))}
         </div>
