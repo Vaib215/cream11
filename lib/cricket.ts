@@ -60,7 +60,7 @@ export class CricketService {
     await redis.setEx(key, ttl, JSON.stringify(data));
   }
 
-  async getUpcomingMatches(format?: MatchFormat): Promise<InternationalMatch[]> {
+  async getUpcomingMatches(format?: MatchFormat) {
     const cacheKey = `matches:upcoming:${format || 'all'}`;
     const cached = await this.getFromCache<InternationalMatch[]>(cacheKey);
 
@@ -73,10 +73,7 @@ export class CricketService {
           offset: 0
         }
       });
-
-      const matches = this.transformMatchesResponse(response.data.data, format);
-      await this.setCache(cacheKey, matches, CACHE_TTL.MATCH);
-      return matches;
+      return response.data.data.filter((match) => match.fantasyEnabled === true);
     } catch (error) {
       console.error('Error fetching upcoming matches:', error);
       return [];

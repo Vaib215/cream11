@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Circle } from "lucide-react";
 import WetPaintButton from "../ui/wet-button";
 import SportsDialog from "./select-sports";
 
