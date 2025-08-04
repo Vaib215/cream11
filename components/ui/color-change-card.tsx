@@ -4,11 +4,10 @@ import { ArrowRight } from "lucide-react";
 
 interface CardProps {
     heading: string;
-    description: string;
     imgSrc: string;
 }
 
-export const ColorChangeCard = ({ heading, description, imgSrc }: CardProps) => {
+export const ColorChangeCard = ({ heading, imgSrc }: CardProps) => {
     return (
         <motion.div
             transition={{ staggerChildren: 0.035 }}

@@ -130,7 +130,7 @@ export default function BasketballWaitlistPage() {
                                         </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        We'll notify you as soon as basketball predictions are available. No spam, promise! 🤝
+                                        We&apos;ll notify you as soon as basketball predictions are available. No spam, promise! 🤝
                                     </p>
                                 </form>
                             ) : (
@@ -140,9 +140,9 @@ export default function BasketballWaitlistPage() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
-                                    <h3 className="text-lg font-semibold text-foreground">You're on the list! 🏀</h3>
+                                    <h3 className="text-lg font-semibold text-foreground">You&apos;re on the list! 🏀</h3>
                                     <p className="text-muted-foreground">
-                                        Thanks for joining! We'll email you as soon as basketball predictions are ready.
+                                        Thanks for joining! We&apos;ll email you as soon as basketball predictions are ready.
                                     </p>
                                     <Button
                                         variant="outline"

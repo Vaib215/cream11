@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { InternationalMatch, MatchFormat } from '@/types/cricket';
 import { Card } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
 import Image from 'next/image';
 import { Input } from './ui/input';

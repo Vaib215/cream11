@@ -1,14 +1,12 @@
 import { withKeyRotation } from "@/lib/gemini";
 
 export default async function CricketMatchPage({
-    params,
     searchParams
 }: {
-    params: { id: string };
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const data = (await searchParams).data;
-    // @ts-ignore
+    // @ts-expect-error - data is not defined in the types
     const decodedMatchData = JSON.parse(atob(data));
     const result = await withKeyRotation(async (genAI) => {
         const model = genAI.getGenerativeModel({
