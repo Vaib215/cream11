@@ -1,0 +1,5 @@
+{
+  "name": "Cream11",
+  "description": "An AI-powered tool to discover upcoming cricket matches and generate a 'Dream Team' (Cream11) of the best players, with reasoning and a full player list, using Google's Gemini AI.",
+  "requestFramePermissions": []
+}

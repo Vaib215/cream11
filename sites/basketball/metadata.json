@@ -1,0 +1,5 @@
+{
+  "name": "Cream11 - AI NBA Fantasy Lineup Generator",
+  "description": "An AI-powered NBA fantasy basketball web application that uses Google's Gemini AI to generate optimal fantasy lineups for upcoming games based on real-time data and comprehensive fantasy rules.",
+  "requestFramePermissions": []
+}
