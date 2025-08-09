@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import type { Match, DreamTeamResponse } from '../types';
+import type { Match, DreamTeamResponse, Player } from '../types';
 
 if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY environment variable not set");
@@ -48,6 +48,142 @@ const parseJsonWithFixes = (jsonString: string): any => {
 
         return JSON.parse(fixedJson);
     }
+};
+
+// --- Helper functions to enforce team constraints locally ---
+const getTotalCredits = (team: Player[]) => team.reduce((sum, p) => sum + (typeof p.credits === 'number' ? p.credits : 0), 0);
+
+const countByTeam = (team: Player[]) => team.reduce<Record<string, number>>((acc, p) => {
+    acc[p.team] = (acc[p.team] || 0) + 1;
+    return acc;
+}, {});
+
+const playerKey = (p: Player) => `${p.name}|${p.team}|${p.role}`;
+
+const ensureNumericCredits = (p: Player): Player => ({
+    ...p,
+    credits: typeof p.credits === 'number' && !Number.isNaN(p.credits) ? p.credits : 8,
+});
+
+// Ensure exactly one Captain and one Vice-Captain are set. If missing, assign by highest credits
+const ensureCaptainVice = (team: Player[]): Player[] => {
+    const hasCaptain = team.some(p => p.isCaptain);
+    const hasVice = team.some(p => p.isViceCaptain);
+
+    // Reset duplicates if any
+    let updated = team.map(p => ({ ...p }));
+    if (!hasCaptain || !hasVice) {
+        // Clear all flags first
+        updated = updated.map(p => ({ ...p, isCaptain: false, isViceCaptain: false }));
+        const sorted = [...updated].sort((a, b) => (b.credits || 0) - (a.credits || 0));
+        if (sorted[0]) sorted[0].isCaptain = true;
+        if (sorted[1]) sorted[1].isViceCaptain = true;
+    }
+    return updated;
+};
+
+// Build the cheapest possible team that matches the given role counts and team cap constraints
+const buildCheapestTeamWithRoleCounts = (allPlayersIn: Player[], targetCounts: Record<string, number>): Player[] => {
+    const allPlayers = allPlayersIn.map(ensureNumericCredits);
+    const selected: Player[] = [];
+    const teamCounts: Record<string, number> = {};
+
+    const byRole: Record<string, Player[]> = {};
+    for (const role of Object.keys(targetCounts)) {
+        byRole[role] = allPlayers
+            .filter(p => p.role === role)
+            .sort((a, b) => (a.credits || 0) - (b.credits || 0));
+    }
+
+    for (const role of Object.keys(targetCounts)) {
+        const need = targetCounts[role] || 0;
+        for (const cand of byRole[role]) {
+            if (selected.length >= 11) break;
+            if (selected.filter(p => p.role === role).length >= need) break;
+            const key = playerKey(cand);
+            if (selected.some(p => playerKey(p) === key)) continue;
+            const afterCount = (teamCounts[cand.team] || 0) + 1;
+            if (afterCount > 7) continue;
+            selected.push(cand);
+            teamCounts[cand.team] = afterCount;
+            if (selected.filter(p => p.role === role).length >= need) break;
+        }
+    }
+
+    return selected.length === 11 ? selected : selected;
+};
+
+const adjustDreamTeamForBudget = (dreamTeamIn: Player[], allPlayersIn: Player[], creditLimit = 100): Player[] => {
+    // Normalize credits
+    let dreamTeam = dreamTeamIn.map(ensureNumericCredits);
+    const allPlayers = allPlayersIn.map(ensureNumericCredits);
+
+    // Build a quick lookup of players already in team
+    const inTeam = new Set(dreamTeam.map(playerKey));
+
+    // While we exceed budget, try greedy replacements by role
+    const safeGuardMaxIterations = 50; // avoid infinite loops
+    let iter = 0;
+    while (getTotalCredits(dreamTeam) > creditLimit && iter < safeGuardMaxIterations) {
+        iter++;
+        // Sort current players by credits desc (try replacing most expensive first)
+        const sortedByCost = [...dreamTeam].sort((a, b) => (b.credits || 0) - (a.credits || 0));
+        let replaced = false;
+
+        for (const current of sortedByCost) {
+            // Find cheapest viable replacement of the same role not already in team
+            const candidates = allPlayers
+                .filter(p => p.role === current.role && playerKey(p) !== playerKey(current))
+                .filter(p => (p.credits || 0) < (current.credits || 0))
+                .filter(p => !dreamTeam.some(t => playerKey(t) === playerKey(p)))
+                .sort((a, b) => (a.credits || 0) - (b.credits || 0));
+
+            const currentWithout = dreamTeam.filter(p => playerKey(p) !== playerKey(current));
+            const currentTeamCounts = countByTeam(currentWithout);
+
+            for (const cand of candidates) {
+                // Check team cap (<=7 from one side)
+                const afterCount = (currentTeamCounts[cand.team] || 0) + 1;
+                if (afterCount > 7) continue;
+
+                const newTeam = [...currentWithout, cand];
+                if (getTotalCredits(newTeam) <= getTotalCredits(dreamTeam)) {
+                    // Accept only if it doesn't increase cost
+                    dreamTeam = newTeam;
+                    inTeam.delete(playerKey(current));
+                    inTeam.add(playerKey(cand));
+                    replaced = true;
+                    break;
+                }
+            }
+            if (replaced) break;
+        }
+
+        if (!replaced) {
+            // No viable replacement found; stop iterating to avoid infinite loop
+            break;
+        }
+    }
+
+    // If still over budget, rebuild a cheapest-valid team with same role counts
+    if (getTotalCredits(dreamTeam) > creditLimit) {
+        const roleCounts = dreamTeam.reduce<Record<string, number>>((acc, p) => {
+            acc[p.role] = (acc[p.role] || 0) + 1;
+            return acc;
+        }, {});
+        const rebuilt = buildCheapestTeamWithRoleCounts(allPlayers, roleCounts);
+        if (rebuilt.length === 11 && getTotalCredits(rebuilt) <= creditLimit) {
+            dreamTeam = rebuilt;
+        }
+    }
+
+    // Final clamp: round to one decimal to avoid float precision causing 100.0000001
+    dreamTeam = dreamTeam.map(p => ({ ...p, credits: Math.round(((p.credits || 0) + Number.EPSILON) * 10) / 10 }));
+
+    // Ensure captain/vice-captain present
+    dreamTeam = ensureCaptainVice(dreamTeam);
+
+    return dreamTeam;
 };
 
 export const fetchUpcomingMatches = async (): Promise<{ matches: Match[] }> => {
@@ -161,6 +297,12 @@ export const generateDreamTeam = async (match: Match): Promise<DreamTeamResponse
         const data = candidates.map(c => c.content.parts.filter(p => !p.thought).map(p => p.text)).join('');
         const result: DreamTeamResponse = parseJsonWithFixes(cleanJsonString(data));
         result.reasoning = thinking;
+
+        // --- Post-processing: enforce budget locally ---
+        if (result?.dreamTeam?.length && result?.allPlayers?.length) {
+            const adjustedTeam = adjustDreamTeamForBudget(result.dreamTeam as Player[], result.allPlayers as Player[], 100);
+            result.dreamTeam = adjustedTeam;
+        }
 
         return result;
 

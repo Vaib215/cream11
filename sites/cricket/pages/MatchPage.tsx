@@ -61,15 +61,30 @@ const MatchPage: React.FC = () => {
                 
                 if (cachedTeam) {
                     // Handle allPlayers data structure - convert object to array if needed
+                    let finalCached: DreamTeamResponse = cachedTeam;
                     if (cachedTeam.allPlayers && typeof cachedTeam.allPlayers === 'object' && !Array.isArray(cachedTeam.allPlayers)) {
                         // Convert object with team keys to flat array
                         const allPlayersArray = Object.values(cachedTeam.allPlayers as Record<string, Player[]>).flat();
-                        return {
+                        finalCached = {
                             ...cachedTeam,
                             allPlayers: allPlayersArray
                         };
                     }
-                    return cachedTeam;
+
+                    // Validate cached team: credits <= 100, exactly 11, max 7 from one side
+                    const totalCredits = (finalCached.dreamTeam || []).reduce((s, p) => s + (p.credits || 0), 0);
+                    const teamCounts = (finalCached.dreamTeam || []).reduce<Record<string, number>>((acc, p) => {
+                        acc[p.team] = (acc[p.team] || 0) + 1;
+                        return acc;
+                    }, {});
+                    const maxFromOneTeam = Math.max(0, ...Object.values(teamCounts));
+
+                    if (totalCredits > 100 || (finalCached.dreamTeam?.length !== 11) || maxFromOneTeam > 7) {
+                        // Invalidate old cache so we regenerate with new rules
+                        return null;
+                    }
+
+                    return finalCached;
                 }
             }
         } catch (error) {
@@ -128,8 +143,32 @@ const MatchPage: React.FC = () => {
     }, [getMatchFromStorage, handleGenerateDreamTeam]);
 
     const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
+        if (!dateString) return 'Date TBA';
+
+        const tryParse = (s: string): Date | null => {
+            const d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        };
+
+        // 1) Try native parsing first
+        let d = tryParse(dateString);
+
+        // 2) Clean common tokens (ordinal suffixes, timezone words) and retry
+        if (!d) {
+            const cleaned = dateString
+                .replace(/(\d+)(st|nd|rd|th)/gi, '$1')
+                .replace(/\b(IST|GMT|UTC)\b/gi, '')
+                .replace(/\bat\b/gi, '')
+                .replace(/,/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            d = tryParse(cleaned);
+        }
+
+        // 3) If still invalid, just return the original string rather than breaking UI
+        if (!d) return dateString;
+
+        return d.toLocaleString('en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
