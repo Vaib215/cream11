@@ -16,7 +16,7 @@ export default function SportsDialog({
           <Link href="https://cricket.cream11.live/">
             <ColorChangeCard heading="Cricket" imgSrc="/cricket.png" />
           </Link>
-          <Link href="/football">
+          <Link href="https://football.cream11.live/">
             <ColorChangeCard heading="Football" imgSrc="/football.png" />
           </Link>
           <Link href="https://basketball.cream11.live/">
