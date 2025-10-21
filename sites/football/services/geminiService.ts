@@ -70,11 +70,15 @@ export const fetchUpcomingMatches = async (): Promise<Match[]> => {
     `;
 
     try {
-        const response = await generateContentWithFallback({
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-lite",
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
                 temperature: 0.0,
+                thinkingConfig: {
+                    includeThoughts: false
+                }
             },
         });
 
