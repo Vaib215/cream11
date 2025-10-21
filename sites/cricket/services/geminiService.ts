@@ -197,7 +197,7 @@ export const fetchUpcomingMatches = async (): Promise<{ matches: Match[] }> => {
         `;
 
         const { text } = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-flash-lite",
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
@@ -283,7 +283,7 @@ export const generateDreamTeam = async (match: Match): Promise<DreamTeamResponse
         `;
 
         const { candidates } = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-flash-lite",
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],

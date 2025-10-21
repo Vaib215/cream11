@@ -10,7 +10,7 @@ export default async function CricketMatchPage({
     const decodedMatchData = JSON.parse(atob(data));
     const result = await withKeyRotation(async (genAI) => {
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-flash-lite",
             tools: [
                 {
                     // @ts-expect-error - google_search is not defined in the types
