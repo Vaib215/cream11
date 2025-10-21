@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Team, Match } from '../types';
 
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const API_KEY = "AIzaSyBEXvwz3LHg0WMevAFr1kv3v2_VEIIj54Q";
 
 if (!API_KEY) {
     throw new Error("GEMINI_API_KEY or API_KEY environment variable not set");
