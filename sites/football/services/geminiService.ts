@@ -75,10 +75,7 @@ export const fetchUpcomingMatches = async (): Promise<Match[]> => {
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
-                temperature: 0.0,
-                thinkingConfig: {
-                    includeThoughts: false
-                }
+                temperature: 0.0
             },
         });
 
