@@ -8,6 +8,34 @@ if (!process.env.GEMINI_API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const generateContentWithFallback = async (params: any) => {
+  try {
+    // Try with gemini-2.5-flash first
+    return await ai.models.generateContent({
+      ...params,
+      model: "gemini-2.5-flash",
+    });
+  } catch (error: any) {
+    // Check if it's a 503 error
+    if (error.status === 503 || (error.message && error.message.includes('503'))) {
+      console.log('gemini-2.5-flash overloaded, falling back to gemini-2.5-flash-lite');
+      return await ai.models.generateContent({
+        ...params,
+        model: "gemini-2.5-flash-lite",
+        config: {
+          ...params.config,
+          thinkingConfig: {
+            includeThoughts: false,
+            maxTokens: 8192
+          }
+        }
+      });
+    }
+    // If it's not a 503 error, re-throw it
+    throw error;
+  }
+};
+
 const cleanJsonString = (str: string): string => {
     // Remove markdown backticks and 'json' language identifier
     let cleaned = str.replace(/```json/g, '').replace(/```/g, '');
@@ -196,8 +224,7 @@ export const fetchUpcomingMatches = async (): Promise<{ matches: Match[] }> => {
             Respond with ONLY a valid JSON array where each object represents a match with keys: "teamA", "teamB", "tournament", "date", and "venue". Do not include any other text or explanations.
         `;
 
-        const { text } = await ai.models.generateContent({
-            model: "gemini-2.5-flash-lite",
+        const { text } = await generateContentWithFallback({
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
@@ -282,8 +309,7 @@ export const generateDreamTeam = async (match: Match): Promise<DreamTeamResponse
             YOUR TEXT RESPONSE SHOULD ONLY BE A JSON AND NOTHING ELSE THAT TOO WITHOUT ANY \`\`\`json thing.
         `;
 
-        const { candidates } = await ai.models.generateContent({
-            model: "gemini-2.5-flash-lite",
+        const { candidates } = await generateContentWithFallback({
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],

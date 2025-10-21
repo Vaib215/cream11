@@ -12,6 +12,34 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY! });
 
+const generateContentWithFallback = async (params: any) => {
+  try {
+    // Try with gemini-2.5-flash first
+    return await ai.models.generateContent({
+      ...params,
+      model: "gemini-2.5-flash",
+    });
+  } catch (error: any) {
+    // Check if it's a 503 error
+    if (error.status === 503 || (error.message && error.message.includes('503'))) {
+      console.log('gemini-2.5-flash overloaded, falling back to gemini-2.5-flash-lite');
+      return await ai.models.generateContent({
+        ...params,
+        model: "gemini-2.5-flash-lite",
+        config: {
+          ...params.config,
+          thinkingConfig: {
+            includeThoughts: false,
+            maxTokens: 8192
+          }
+        }
+      });
+    }
+    // If it's not a 503 error, re-throw it
+    throw error;
+  }
+};
+
 const cleanJsonString = (str: string): string => {
     // Remove markdown backticks and 'json' language identifier
     let cleaned = str.replace(/```json/g, '').replace(/```/g, '');
@@ -79,8 +107,7 @@ export const fetchUpcomingGames = async (): Promise<{ games: Game[] }> => {
             ]
         `;
 
-        const { text } = await ai.models.generateContent({
-            model: "gemini-2.5-flash-lite",
+        const { text } = await generateContentWithFallback({
             contents: prompt,
             config: {
                 tools: [{ googleSearch: {} }],
@@ -148,8 +175,7 @@ export const generateFantasyLineup = async (game: Game): Promise<Lineup> => {
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
+    const response = await generateContentWithFallback({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
