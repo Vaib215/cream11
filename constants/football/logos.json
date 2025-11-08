@@ -1,0 +1,122 @@
+{
+  "1": {
+    "id": "1",
+    "name": "Manchester United",
+    "shortName": "Man Utd",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg"
+  },
+  "2": {
+    "id": "2",
+    "name": "Leeds United",
+    "shortName": "Leeds",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg"
+  },
+  "3": {
+    "id": "3",
+    "name": "Arsenal",
+    "shortName": "Arsenal",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg"
+  },
+  "4": {
+    "id": "4",
+    "name": "Newcastle United",
+    "shortName": "Newcastle",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg"
+  },
+  "6": {
+    "id": "6",
+    "name": "Tottenham Hotspur",
+    "shortName": "Spurs",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg"
+  },
+  "7": {
+    "id": "7",
+    "name": "Aston Villa",
+    "shortName": "Aston Villa",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg"
+  },
+  "8": {
+    "id": "8",
+    "name": "Chelsea",
+    "shortName": "Chelsea",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg"
+  },
+  "11": {
+    "id": "11",
+    "name": "Everton",
+    "shortName": "Everton",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/11.svg"
+  },
+  "14": {
+    "id": "14",
+    "name": "Liverpool",
+    "shortName": "Liverpool",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg"
+  },
+  "17": {
+    "id": "17",
+    "name": "Nottingham Forest",
+    "shortName": "Nott'm Forest",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg"
+  },
+  "21": {
+    "id": "21",
+    "name": "West Ham United",
+    "shortName": "West Ham",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/21.svg"
+  },
+  "31": {
+    "id": "31",
+    "name": "Crystal Palace",
+    "shortName": "Crystal Palace",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg"
+  },
+  "36": {
+    "id": "36",
+    "name": "Brighton and Hove Albion",
+    "shortName": "Brighton",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg"
+  },
+  "39": {
+    "id": "39",
+    "name": "Wolverhampton Wanderers",
+    "shortName": "Wolves",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg"
+  },
+  "43": {
+    "id": "43",
+    "name": "Manchester City",
+    "shortName": "Man City",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg"
+  },
+  "54": {
+    "id": "54",
+    "name": "Fulham",
+    "shortName": "Fulham",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/54.svg"
+  },
+  "56": {
+    "id": "56",
+    "name": "Sunderland",
+    "shortName": "Sunderland",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg"
+  },
+  "90": {
+    "id": "90",
+    "name": "Burnley",
+    "shortName": "Burnley",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg"
+  },
+  "91": {
+    "id": "91",
+    "name": "Bournemouth",
+    "shortName": "Bournemouth",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg"
+  },
+  "94": {
+    "id": "94",
+    "name": "Brentford",
+    "shortName": "Brentford",
+    "logoUrl": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg"
+  }
+}
