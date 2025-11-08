@@ -1,0 +1,274 @@
+[
+  {
+    "teamId": 1610612755,
+    "teamName": "76ers",
+    "teamCity": "Philadelphia",
+    "teamTricode": "PHI",
+    "teamSlug": "sixers",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612755/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612749,
+    "teamName": "Bucks",
+    "teamCity": "Milwaukee",
+    "teamTricode": "MIL",
+    "teamSlug": "bucks",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612749/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612741,
+    "teamName": "Bulls",
+    "teamCity": "Chicago",
+    "teamTricode": "CHI",
+    "teamSlug": "bulls",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612741/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612739,
+    "teamName": "Cavaliers",
+    "teamCity": "Cleveland",
+    "teamTricode": "CLE",
+    "teamSlug": "cavaliers",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612739/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612738,
+    "teamName": "Celtics",
+    "teamCity": "Boston",
+    "teamTricode": "BOS",
+    "teamSlug": "celtics",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612746,
+    "teamName": "Clippers",
+    "teamCity": "LA",
+    "teamTricode": "LAC",
+    "teamSlug": "clippers",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612746/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612763,
+    "teamName": "Grizzlies",
+    "teamCity": "Memphis",
+    "teamTricode": "MEM",
+    "teamSlug": "grizzlies",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612763/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612737,
+    "teamName": "Hawks",
+    "teamCity": "Atlanta",
+    "teamTricode": "ATL",
+    "teamSlug": "hawks",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612737/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612748,
+    "teamName": "Heat",
+    "teamCity": "Miami",
+    "teamTricode": "MIA",
+    "teamSlug": "heat",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612748/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612766,
+    "teamName": "Hornets",
+    "teamCity": "Charlotte",
+    "teamTricode": "CHA",
+    "teamSlug": "hornets",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612766/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612762,
+    "teamName": "Jazz",
+    "teamCity": "Utah",
+    "teamTricode": "UTA",
+    "teamSlug": "jazz",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg"
+  },
+  {
+    "teamId": 50014,
+    "teamName": "Jerusalem B.C.",
+    "teamCity": "Hapoel",
+    "teamTricode": "HAP",
+    "teamSlug": "jerusalem-b.c.",
+    "logoUrl": "https://cdn.nba.com/logos/nba/50014/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612758,
+    "teamName": "Kings",
+    "teamCity": "Sacramento",
+    "teamTricode": "SAC",
+    "teamSlug": "kings",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612758/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612752,
+    "teamName": "Knicks",
+    "teamCity": "New York",
+    "teamTricode": "NYK",
+    "teamSlug": "knicks",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612747,
+    "teamName": "Lakers",
+    "teamCity": "Los Angeles",
+    "teamTricode": "LAL",
+    "teamSlug": "lakers",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612747/primary/L/logo.svg"
+  },
+  {
+    "teamId": 15018,
+    "teamName": "Loong-Lions",
+    "teamCity": "Guangzhou",
+    "teamTricode": "GUA",
+    "teamSlug": "loong-lions",
+    "logoUrl": "https://cdn.nba.com/logos/nba/15018/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612753,
+    "teamName": "Magic",
+    "teamCity": "Orlando",
+    "teamTricode": "ORL",
+    "teamSlug": "magic",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612753/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612742,
+    "teamName": "Mavericks",
+    "teamCity": "Dallas",
+    "teamTricode": "DAL",
+    "teamSlug": "mavericks",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612742/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612751,
+    "teamName": "Nets",
+    "teamCity": "Brooklyn",
+    "teamTricode": "BKN",
+    "teamSlug": "nets",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612751/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612743,
+    "teamName": "Nuggets",
+    "teamCity": "Denver",
+    "teamTricode": "DEN",
+    "teamSlug": "nuggets",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612743/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612754,
+    "teamName": "Pacers",
+    "teamCity": "Indiana",
+    "teamTricode": "IND",
+    "teamSlug": "pacers",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612754/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612740,
+    "teamName": "Pelicans",
+    "teamCity": "New Orleans",
+    "teamTricode": "NOP",
+    "teamSlug": "pelicans",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612740/primary/L/logo.svg"
+  },
+  {
+    "teamId": 50013,
+    "teamName": "Phoenix",
+    "teamCity": "South East Melbourne",
+    "teamTricode": "SEM",
+    "teamSlug": "phoenix",
+    "logoUrl": "https://cdn.nba.com/logos/nba/50013/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612765,
+    "teamName": "Pistons",
+    "teamCity": "Detroit",
+    "teamTricode": "DET",
+    "teamSlug": "pistons",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612765/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612761,
+    "teamName": "Raptors",
+    "teamCity": "Toronto",
+    "teamTricode": "TOR",
+    "teamSlug": "raptors",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612745,
+    "teamName": "Rockets",
+    "teamCity": "Houston",
+    "teamTricode": "HOU",
+    "teamSlug": "rockets",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612745/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612759,
+    "teamName": "Spurs",
+    "teamCity": "San Antonio",
+    "teamTricode": "SAS",
+    "teamSlug": "spurs",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612759/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612756,
+    "teamName": "Suns",
+    "teamCity": "Phoenix",
+    "teamTricode": "PHX",
+    "teamSlug": "suns",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612756/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612760,
+    "teamName": "Thunder",
+    "teamCity": "Oklahoma City",
+    "teamTricode": "OKC",
+    "teamSlug": "thunder",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612750,
+    "teamName": "Timberwolves",
+    "teamCity": "Minnesota",
+    "teamTricode": "MIN",
+    "teamSlug": "timberwolves",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612750/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612757,
+    "teamName": "Trail Blazers",
+    "teamCity": "Portland",
+    "teamTricode": "POR",
+    "teamSlug": "blazers",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612757/primary/L/logo.svg"
+  },
+  {
+    "teamId": 15016,
+    "teamName": "United",
+    "teamCity": "Melbourne",
+    "teamTricode": "MEL",
+    "teamSlug": "united",
+    "logoUrl": "https://cdn.nba.com/logos/nba/15016/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612744,
+    "teamName": "Warriors",
+    "teamCity": "Golden State",
+    "teamTricode": "GSW",
+    "teamSlug": "warriors",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612744/primary/L/logo.svg"
+  },
+  {
+    "teamId": 1610612764,
+    "teamName": "Wizards",
+    "teamCity": "Washington",
+    "teamTricode": "WAS",
+    "teamSlug": "wizards",
+    "logoUrl": "https://cdn.nba.com/logos/nba/1610612764/primary/L/logo.svg"
+  }
+]
