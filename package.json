@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "dev:basketball": "cd sites/basketball && bun run dev",
+    "dev:football": "cd sites/football && bun run dev",
+    "dev:cricket": "cd sites/cricket && bun run dev"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
@@ -24,6 +27,7 @@
     "lucide-react": "^0.483.0",
     "motion": "^12.23.12",
     "next": "15.2.3",
+    "ollama": "^0.6.2",
     "posthog-js": "^1.234.1",
     "posthog-node": "^4.11.1",
     "react": "^19.0.0",

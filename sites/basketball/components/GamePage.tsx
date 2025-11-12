@@ -25,12 +25,6 @@ const GamePage = () => {
 
   const fetchLineup = useCallback(
     async (currentGame: Game) => {
-      if (!process.env.API_KEY) {
-        setError(
-          "API Key is not configured. Please set the API_KEY environment variable."
-        );
-        return;
-      }
       setLoading(true);
       setError(null);
       try {

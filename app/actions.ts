@@ -1,6 +1,6 @@
 "use server";
 
-import { getCustomTeamAnalysis } from "@/lib/gemini";
+import { getCustomTeamAnalysis } from "@/lib/cricket-ai";
 import { Player } from "@/types/player";
 
 export async function analyzeTeam(team: Player[], aiSuggestedTeam: Player[]) {

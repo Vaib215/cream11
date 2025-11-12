@@ -1,187 +1,171 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { Team, Match } from '../types';
+import { Ollama } from "ollama";
+import { Team, Match } from "../types";
 
-const API_KEY = "AIzaSyBEXvwz3LHg0WMevAFr1kv3v2_VEIIj54Q";
+const OLLAMA_HOST =
+  import.meta.env.VITE_OLLAMA_HOST || "http://localhost:11434";
+const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || "gemma3:1b";
 
-if (!API_KEY) {
-    throw new Error("GEMINI_API_KEY or API_KEY environment variable not set");
-}
+const ollama = new Ollama({ host: OLLAMA_HOST });
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-const generateContentWithFallback = async (params: any) => {
+const generateContentWithFallback = async (
+  prompt: string,
+  options?: { jsonMode?: boolean; temperature?: number }
+) => {
   try {
-    // Try with gemini-2.5-flash first
-    return await ai.models.generateContent({
-      ...params,
-      model: "gemini-2.5-flash",
+    const response = await ollama.generate({
+      model: OLLAMA_MODEL,
+      prompt,
+      format: options?.jsonMode ? "json" : undefined,
+      options: {
+        temperature: options?.temperature ?? 0.7,
+      },
     });
+    return { text: response.response };
   } catch (error: any) {
-    // Check if it's a 503 error
-    if (error.status === 503 || (error.message && error.message.includes('503'))) {
-      console.log('gemini-2.5-flash overloaded, falling back to gemini-2.5-flash-lite');
-      return await ai.models.generateContent({
-        ...params,
-        model: "gemini-2.5-flash-lite",
-        config: {
-          ...params.config,
-          thinkingConfig: {
-            includeThoughts: false,
-            maxTokens: 8192
-          }
-        }
-      });
+    console.error("Ollama error details:", error);
+
+    // Handle CORS/network errors (browser can't connect to Ollama)
+    if (
+      error.message?.includes("fetch") ||
+      error.message?.includes("NetworkError") ||
+      error.code === "ECONNREFUSED"
+    ) {
+      throw new Error(
+        "Cannot connect to Ollama. Make sure:\n1. Ollama is running (ollama serve)\n2. CORS is enabled: OLLAMA_ORIGINS=* ollama serve\n3. Or use a backend proxy for production"
+      );
     }
-    // If it's not a 503 error, re-throw it
+
+    // Handle Ollama-specific errors
+    if (
+      error.message?.includes("connection") ||
+      error.code === "ECONNREFUSED"
+    ) {
+      throw new Error(
+        "Ollama server is not running. Please start Ollama with: OLLAMA_ORIGINS=* ollama serve"
+      );
+    }
+    if (
+      error.message?.includes("model") &&
+      error.message?.includes("not found")
+    ) {
+      throw new Error(
+        `Model '${OLLAMA_MODEL}' not found. Download it with: ollama pull ${OLLAMA_MODEL}`
+      );
+    }
     throw error;
   }
 };
 
-export const fetchUpcomingMatches = async (): Promise<Match[]> => {
-    const prompt = `
-        You are an expert sports data analyst. Your task is to find and list upcoming English Premier League matches.
+// Note: fetchUpcomingMatches is now in footballDataService.ts
+// This file only handles AI-powered team generation
+export { fetchUpcomingMatches } from "./footballDataService";
 
-        1.  First, identify the current date.
-        2.  Then, find the official English Premier League fixtures page.
-        3.  Extract ALL matches scheduled for the very next match day.
-        4.  If that match day has fewer than 5 matches, continue to the following match day(s) until you have a list of AT LEAST 5 matches in total.
-        5.  For each match, you MUST provide:
-            - A unique numeric ID, starting from 1.
-            - The home team, as an object with its full "name" and a valid "logo" URL. Use high-quality, reliable sources for logos (e.g., 'https://ssl.gstatic.com/onebox/media/sports/logos/...' or official site assets).
-            - The away team, following the same structure.
-            - The match date and time, formatted as "DAY, DD MON - HH:MM".
-
-        Your response MUST be ONLY the JSON array. Do not include any introductory text, explanations, or markdown formatting like \`\`\`json.
-        Your entire response must be a valid JSON array, starting with '[' and ending with ']'.
-
-        Example of a single match object in the array:
-        {
-          "id": 1,
-          "team1": {
-            "name": "Manchester United",
-            "logo": "https://ssl.gstatic.com/onebox/media/sports/logos/udQ6ns69OuOdeE3MYdpoPg_96x96.png"
-          },
-          "team2": {
-            "name": "Fulham",
-            "logo": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7kAw_96x96.png"
-          },
-          "date": "FRI, 16 AUG - 20:00"
-        }
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-lite",
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }],
-            },
-        });
-
-        const rawText = response.text;
-        if (!rawText || typeof rawText !== 'string' || rawText.trim() === '') {
-            throw new Error("AI returned an empty or invalid response.");
-        }
-
-        const startIndex = rawText.indexOf('[');
-        const endIndex = rawText.lastIndexOf(']');
-
-        if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
-            console.error("Invalid AI Response:", rawText);
-            throw new Error("Could not find a valid JSON array in the AI's response.");
-        }
-
-        const jsonText = rawText.substring(startIndex, endIndex + 1);
-
-        const matches = JSON.parse(jsonText);
-
-        if (!Array.isArray(matches) || matches.length === 0) {
-            throw new Error("AI did not return a valid array of matches.");
-        }
-
-        const firstMatch = matches[0];
-        if (!firstMatch.id || !firstMatch.team1?.name || !firstMatch.team1?.logo || !firstMatch.team2?.name || !firstMatch.team2?.logo || !firstMatch.date) {
-            throw new Error("The match data structure from the AI is incorrect or missing fields.");
-        }
-
-        return matches as Match[];
-
-    } catch (error) {
-        console.error("Error fetching upcoming matches from Gemini API:", error);
-        if (error instanceof SyntaxError) {
-            throw new Error("Failed to parse the match data from the AI. The response was not valid JSON.");
-        }
-        const message = error instanceof Error ? error.message : 'An unknown error occurred during fetch.';
-        throw new Error(`Failed to get a valid response from the AI model for upcoming matches. Reason: ${message}`);
-    }
-};
-
-const playerSchema = {
-    type: Type.OBJECT,
-    properties: {
-        name: { type: Type.STRING, description: "Full name of the player." },
-        club: { type: Type.STRING, description: "The player's current club name." },
-        reasoning: { type: Type.STRING, description: "A brief justification for selecting this player, focusing on FPL metrics like form, fixture difficulty, and potential for points." },
-    },
-    required: ["name", "club", "reasoning"],
-};
-
-const schema = {
-    type: Type.OBJECT,
-    properties: {
-        formation: {
-            type: Type.STRING,
-            description: "The tactical formation of the team (e.g., 4-4-2, 4-3-3, 3-5-2)."
-        },
-        strategy: {
-            type: Type.STRING,
-            description: "A summary of the overall strategy for this team selection, considering the specific opponent and player choices."
-        },
-        team: {
-            type: Type.OBJECT,
-            properties: {
-                goalkeeper: { type: Type.ARRAY, items: playerSchema, minItems: 1, maxItems: 1 },
-                defenders: { type: Type.ARRAY, items: playerSchema, minItems: 3, maxItems: 5 },
-                midfielders: { type: Type.ARRAY, items: playerSchema, minItems: 3, maxItems: 5 },
-                forwards: { type: Type.ARRAY, items: playerSchema, minItems: 1, maxItems: 3 },
-            },
-            required: ["goalkeeper", "defenders", "midfielders", "forwards"],
-        },
-    },
-    required: ["formation", "strategy", "team"],
-};
-
-
-export const generateFplTeam = async (team1: string, team2: string): Promise<Team> => {
-    const prompt = `
+export const generateFplTeam = async (
+  team1: string,
+  team2: string
+): Promise<Team> => {
+  const prompt = `
         Generate the best possible Fantasy Premier League (FPL) team for the upcoming match week, considering the specific match between ${team1} and ${team2}.
         The team should consist of 11 players from ANY Premier League team. 
         Base your selections on player form, fixture difficulty for the gameweek, historical performance, and potential for FPL points (goals, assists, clean sheets).
         Provide a tactical formation and a brief overall strategy for the selections.
         Ensure the number of players in each position is valid for the chosen formation. For example, a 4-4-2 formation should have 1 goalkeeper, 4 defenders, 4 midfielders, and 2 forwards.
-    `;
 
-    try {
-        const response = await generateContentWithFallback({
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: schema,
-                temperature: 0.7,
-            },
-        });
-
-        const text = response.text.trim();
-        const parsedResponse = JSON.parse(text);
-
-        if (!parsedResponse.formation || !parsedResponse.team) {
-            throw new Error("AI response is missing required fields.");
+        You MUST respond with a JSON object in the following format:
+        {
+          "formation": "4-4-2",
+          "strategy": "A summary of the overall strategy...",
+          "team": {
+            "goalkeeper": [
+              {
+                "name": "Player Name",
+                "club": "Club Name",
+                "reasoning": "Brief justification..."
+              }
+            ],
+            "defenders": [
+              {
+                "name": "Player Name",
+                "club": "Club Name",
+                "reasoning": "Brief justification..."
+              }
+            ],
+            "midfielders": [
+              {
+                "name": "Player Name",
+                "club": "Club Name",
+                "reasoning": "Brief justification..."
+              }
+            ],
+            "forwards": [
+              {
+                "name": "Player Name",
+                "club": "Club Name",
+                "reasoning": "Brief justification..."
+              }
+            ]
+          }
         }
 
-        return parsedResponse as Team;
+        Ensure:
+        - goalkeeper array has exactly 1 player
+        - defenders array has 3-5 players
+        - midfielders array has 3-5 players
+        - forwards array has 1-3 players
+        - Total of 11 players
+        - Each player has name, club, and reasoning fields
+    `;
 
-    } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        throw new Error("Failed to get a valid response from the AI model.");
+  try {
+    const response = await generateContentWithFallback(prompt, {
+      jsonMode: true,
+      temperature: 0.7,
+    });
+
+    const text = response.text.trim();
+    const parsedResponse = JSON.parse(text);
+
+    if (!parsedResponse.formation || !parsedResponse.team) {
+      throw new Error("AI response is missing required fields.");
     }
+
+    // Validate team structure
+    const team = parsedResponse.team;
+    if (
+      !team.goalkeeper ||
+      !Array.isArray(team.goalkeeper) ||
+      team.goalkeeper.length !== 1
+    ) {
+      throw new Error("Team must have exactly 1 goalkeeper.");
+    }
+    if (
+      !team.defenders ||
+      !Array.isArray(team.defenders) ||
+      team.defenders.length < 3 ||
+      team.defenders.length > 5
+    ) {
+      throw new Error("Team must have 3-5 defenders.");
+    }
+    if (
+      !team.midfielders ||
+      !Array.isArray(team.midfielders) ||
+      team.midfielders.length < 3 ||
+      team.midfielders.length > 5
+    ) {
+      throw new Error("Team must have 3-5 midfielders.");
+    }
+    if (
+      !team.forwards ||
+      !Array.isArray(team.forwards) ||
+      team.forwards.length < 1 ||
+      team.forwards.length > 3
+    ) {
+      throw new Error("Team must have 1-3 forwards.");
+    }
+
+    return parsedResponse as Team;
+  } catch (error) {
+    console.error("Error calling Ollama API:", error);
+    throw new Error("Failed to get a valid response from the AI model.");
+  }
 };
